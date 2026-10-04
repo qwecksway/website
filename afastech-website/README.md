@@ -18,6 +18,7 @@ afastech-website/
 ├── portal-student.html            Student sign-in (Supabase Auth)
 ├── portal-staff.html              Staff sign-in (Supabase Auth)
 ├── portal-admin.html              Super Admin sign-in (Supabase Auth)
+├── portal-set-password.html       Staff invitation password setup
 ├── portal-student-dashboard.html  Student dashboard (RLS-protected data)
 ├── portal-staff-dashboard.html    Staff dashboard (RLS-protected data)
 ├── portal-admin-dashboard.html    Super Admin account, house, and fee tools
@@ -25,6 +26,7 @@ afastech-website/
 ├── js/main.js                     Nav toggle, current-page highlighting, footer year
 ├── js/admissions.js               Admissions wizard logic
 ├── js/portal.js                   Supabase Auth and portal data access
+├── js/set-password.js             Secure invited-staff password setup
 ├── js/supabase-config.js          Public Supabase URL and publishable key
 └── assets/
     ├── afastech-crest.jpg          Official AFASTECH school crest
@@ -76,13 +78,22 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
     ```
 
     Confirm the query returns exactly the intended account. Only this trusted SQL provisioning process can grant `admin`; the Super Admin portal can assign only `student` or `staff` roles. Newly invited accounts remain pending until an administrator explicitly assigns a role. Share the Super Admin URL (`portal-admin.html`) privately with authorized administrators; it is intentionally not linked from public website navigation.
-6. In Supabase Authentication settings, review email/password policy, configure a trusted SMTP provider, enable CAPTCHA if appropriate, and set Auth rate limits and session time-box/inactivity limits to school policy. Password hashing and verification are handled by Supabase Auth. The website does not store or hash passwords itself.
-7. In the Super Admin portal, create houses, assign students and House Masters, and review or update student fee statuses. A House Master can update only students in assigned houses; the Super Admin can manage all student fee statuses. Both write to the same `student_details` row that the student's portal reads. Supabase Realtime sends fee-status changes to an already-open student dashboard.
-8. Serve and test over HTTPS using the real deployment origin. Database access is restricted by RLS, and privileged account and fee operations use role-checked database functions; never expose a `service_role` key or grant users roles through editable metadata.
+6. Configure the staff-invitation Edge Function. In Supabase Authentication → URL Configuration, keep the Site URL at your deployed website origin and add the exact redirect URL `https://YOUR-DOMAIN/portal-set-password.html`. In Supabase Edge Functions → Secrets, set `SITE_URL` to that HTTPS website origin and `ALLOWED_ORIGINS` to its exact origin (scheme and host only, no path). Supabase supplies its project URL, anon key, and service-role key to the Edge Function runtime. Never place the service-role key in website code or send it to the browser.
+
+   From the repository root, deploy only the invitation function (the API bundler avoids requiring Docker):
+
+    ```powershell
+    supabase functions deploy invite-staff --project-ref YOUR_PROJECT_REF --use-api
+    ```
+
+   The function verifies the signed-in caller's database role, creates an Auth invitation, assigns the Staff role, and stores the job title and department in `staff_details`. Staff and teachers share the `staff` role and Staff Portal; their job title distinguishes their position. The new staff member follows the invitation email to set a password at `portal-set-password.html`. Configure trusted SMTP in Supabase Auth so invitation messages are delivered.
+7. In Supabase Authentication settings, review email/password policy, enable CAPTCHA if appropriate, and set Auth rate limits and session time-box/inactivity limits to school policy. Password hashing and verification are handled by Supabase Auth. The website does not store or hash passwords itself.
+8. In the Super Admin portal, create houses, assign students and House Masters, and review or update student fee statuses. A House Master can update only students in assigned houses; the Super Admin can manage all student fee statuses. Both write to the same `student_details` row that the student's portal reads. Supabase Realtime sends fee-status changes to an already-open student dashboard.
+9. Serve and test over HTTPS using the real deployment origin. Database access is restricted by RLS, and privileged account and fee operations use role-checked database functions; never expose a `service_role` key or grant users roles through editable metadata.
 
 The initial fee workflow updates the existing `fees_status` field (for example, a school-defined status). It is not yet a transaction ledger for amounts, payments, balances, or receipts.
 
-The site calls Supabase Auth and Data APIs directly, so there is no custom API server or Edge Function CORS middleware in this project. Set exact Auth redirect URLs and configure your hosting security headers for the deployment. If Edge Functions are added later, allow only the exact deployed site origin and required headers; do not use wildcard origins for authenticated operations. CORS is not a substitute for RLS or authorization.
+The static site calls Supabase Auth and Data APIs directly; the staff invitation is the one Edge Function because account creation requires a privileged Auth Admin API key. Its allowed browser origin is configured explicitly; do not use wildcard origins for authenticated operations. CORS is not a substitute for RLS or authorization. Configure hosting security headers for the deployed website.
 
 Gradebook, student results, and announcements remain read-only in this phase. Add narrowly scoped role-checked operations before enabling edits to those records. Review access using separate student, staff, and Super Admin test accounts before using real school data.
 

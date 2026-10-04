@@ -50,6 +50,30 @@
           <div class="card"><h4>Portal accounts</h4><p data-admin-total>0</p></div>
           <div class="card"><h4>Staff accounts</h4><p data-admin-staff-count>0</p></div>
         </div>
+        <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
+          <h2>Add a staff member or teacher</h2>
+          <p>Send a secure sign-in invitation. New accounts are created with the Staff Portal role.</p>
+          <form id="admin-staff-form">
+            <div class="field">
+              <label for="admin-staff-name">Full name</label>
+              <input type="text" id="admin-staff-name" name="full_name" maxlength="120" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="admin-staff-email">School email</label>
+              <input type="email" id="admin-staff-email" name="email" maxlength="254" autocomplete="email" required>
+            </div>
+            <div class="field">
+              <label for="admin-staff-position">Job title</label>
+              <input type="text" id="admin-staff-position" name="position" maxlength="120" placeholder="Teacher, House Master, Administrator" required>
+            </div>
+            <div class="field">
+              <label for="admin-staff-department">Department (optional)</label>
+              <input type="text" id="admin-staff-department" name="department" maxlength="120">
+            </div>
+            <button class="btn btn-primary" type="submit">Create Staff Account &amp; Send Invitation</button>
+          </form>
+          <p id="admin-staff-status" role="status" style="color:var(--stone);"></p>
+        </section>
         <h2 id="accounts">Portal accounts</h2>
         <div style="overflow-x:auto;">
           <table class="data-table" style="margin-bottom:2rem;">
@@ -90,8 +114,8 @@
           </div>
         </section>
         <section class="card" id="provisioning">
-          <h3>Invite a user</h3>
-          <p>For security, create or invite the user through Supabase Authentication first. Their new account will appear here as pending. Then assign Student or Staff access above.</p>
+          <h3>Student account setup</h3>
+          <p>Student accounts are invited through Supabase Authentication, then assigned the Student role in Portal accounts above. Use Add a staff member or teacher to create Staff Portal accounts directly from this page.</p>
           <p><strong>Super Admin access cannot be granted from this page.</strong> The first Super Admin must be provisioned by an existing trusted database operator.</p>
         </section>
       </div>

@@ -464,6 +464,50 @@
     });
   }
 
+  function initializeStaffInvite(client) {
+    var form = document.getElementById("admin-staff-form");
+    var status = document.getElementById("admin-staff-status");
+    if (!form) return;
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var button = form.querySelector("button[type='submit']");
+      var data = new FormData(form);
+      button.disabled = true;
+      showAlert(status, "Creating the Staff Portal account and sending its invitation…", "success");
+
+      try {
+        var result = await client.functions.invoke("invite-staff", {
+          body: {
+            full_name: String(data.get("full_name") || "").trim(),
+            email: String(data.get("email") || "").trim().toLowerCase(),
+            position: String(data.get("position") || "").trim(),
+            department: String(data.get("department") || "").trim()
+          }
+        });
+        if (result.error) throw result.error;
+
+        showAlert(
+          status,
+          "Staff account created and invitation sent. The new account can sign in through the Staff Portal after accepting the email.",
+          "success"
+        );
+        form.reset();
+        await loadAdminDashboard(client);
+      } catch (error) {
+        showAlert(
+          status,
+          error && error.message
+            ? "The staff account could not be created: " + error.message
+            : "The staff account could not be created. Check the email address and Edge Function setup, then try again.",
+          "error"
+        );
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
   function watchStudentFeeChanges(client, studentId) {
     client
       .channel("student-fees-" + studentId)
@@ -613,7 +657,10 @@
         watchStudentFeeChanges(client, session.user.id);
       }
       else if (requiredRole === "staff") await loadStaffDashboard(client, session.user.id);
-      else await loadAdminDashboard(client);
+      else {
+        await loadAdminDashboard(client);
+        initializeStaffInvite(client);
+      }
     } catch (error) {
       showAlert(alertBox, "Portal data could not be loaded. Please refresh or contact the site administrator.", "error");
     }
