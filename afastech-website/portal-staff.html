@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Portal — AFASTECH</title>
+<meta name="description" content="Sign in to the AFASTECH staff portal.">
+<link rel="icon" href="assets/crest.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="staff-portal">
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="announce-bar">
+  <div class="announce-track">
+    <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
+    <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
+  </div>
+</div>
+<header class="site-header">
+  <div class="container nav-row">
+    <a class="brand" href="index.html">
+      <img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <span class="brand-text"><span class="brand-name">AFASTECH</span><span class="brand-sub">Afadjato Senior High Technical School</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="index.html" data-nav="home">Home</a>
+      <a href="about.html" data-nav="about">About</a>
+      <a href="programmes.html" data-nav="programmes">Programmes</a>
+      <a href="admissions.html" data-nav="admissions">Admissions</a>
+      <a href="news.html" data-nav="news">News</a>
+      <a href="events.html" data-nav="events">Events</a>
+      <a href="contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-outline btn-header" href="portal-student.html">Student Portal</a>
+      <a class="btn btn-outline btn-header" href="portal-staff.html">Staff Portal</a>
+      <a class="btn btn-primary btn-header" href="admissions.html">Apply Now</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="login-shell">
+    <div class="login-card">
+      <img class="login-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <h1>Staff Portal</h1>
+      <p class="login-sub">Sign in to manage classes, enter results, and view school notices.</p>
+
+      <div id="portal-alert" class="alert" role="status"></div>
+
+      <form id="portal-login" data-portal="staff">
+        <div class="field">
+          <label for="portalId">School email</label>
+          <input type="email" id="portalId" name="portalId" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="portalPass">Password</label>
+          <input type="password" id="portalPass" name="portalPass" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Sign In</button>
+      </form>
+
+      <div class="login-divider">Need admissions help instead?</div>
+      <a class="btn btn-outline btn-block" href="admissions.html">Go to Admissions</a>
+
+      <div class="demo-note">Staff accounts are invite-only and must be enabled by the school administrator.</div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© <span data-year></span> Afadjato Senior High Technical School. All rights reserved.</span>
+      <span><a href="contact.html" style="color:var(--forest-100);">Need help signing in?</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard — AFASTECH</title>
+<link rel="icon" href="assets/crest.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="student-dashboard">
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="announce-bar">
+  <div class="announce-track">
+    <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
+    <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
+  </div>
+</div>
+<header class="portal-dash-header">
+  <div class="container">
+    <a class="brand" href="index.html" style="color:var(--white);">
+      <img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Student Portal</span></span>
+    </a>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Student</strong></span>
+      <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="student">Sign Out</a>
+</header>
+
+<main id="main" class="portal-shell">
+  <div class="container dash-grid">
+    <nav aria-label="Dashboard">
+      <ul class="dash-nav">
+        <li><a class="active" href="portal-student-dashboard.html">Overview</a></li>
+        <li><a href="#timetable">Timetable</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#notices">Notices</a></li>
+        <li><a href="#fees">Fees Status</a></li>
+      </ul>
+    </nav>
+
+    <div>
+      <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
+      <div data-dashboard-content hidden>
+
+      <h1>Welcome back</h1>
+      <p style="color:var(--stone); margin-bottom:2rem;">Here's what's happening in your programme this week.</p>
+
+      <div class="grid grid-3" style="margin-bottom:2.5rem;">
+        <div class="card"><h4>Programme</h4><p data-student-programme>Loading…</p></div>
+        <div class="card"><h4>Residency</h4><p data-student-residency>Loading…</p></div>
+        <div class="card"><h4>Current Term</h4><p data-student-term>Loading…</p></div>
+      </div>
+
+      <p id="student-data-status" role="status" style="color:var(--stone);"></p>
+      <h3 id="timetable">This week's timetable</h3>
+      <table class="data-table" style="margin-bottom:2.5rem;">
+        <thead><tr><th>Day</th><th>Morning</th><th>Afternoon</th></tr></thead>
+        <tbody id="student-timetable"></tbody>
+      </table>
+      <p id="student-timetable-status" role="status" style="color:var(--stone);"></p>
+
+      <h3 id="results">Recent results</h3>
+      <table class="data-table" style="margin-bottom:2.5rem;">
+        <thead><tr><th>Subject</th><th>Assessment</th><th>Score</th></tr></thead>
+        <tbody id="student-results"></tbody>
+      </table>
+      <p id="student-results-status" role="status" style="color:var(--stone);"></p>
+
+      <h3 id="notices">Notices</h3>
+      <div id="portal-announcements"></div>
+      <div class="card" id="fees" style="margin-bottom:1rem;">
+        <h4>Fees status</h4>
+        <p data-student-fees style="color:var(--stone);">Loading…</p>
+      </div>
+    </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admissions — AFASTECH</title>
+<meta name="description" content="Apply to Afadjato Senior High Technical School: confirm your CSSPS placement, redeem your voucher, and complete your admission online.">
+<link rel="icon" href="assets/crest.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admissions">
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="announce-bar">
+    <div class="announce-track">
+      <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
+      <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
+    </div>
+  </div>
+  <div class="container nav-row">
+    <a class="brand" href="index.html">
+      <img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <span class="brand-text"><span class="brand-name">AFASTECH</span><span class="brand-sub">Afadjato Senior High Technical School</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="index.html" data-nav="home">Home</a>
+      <a href="about.html" data-nav="about">About</a>
+      <a href="programmes.html" data-nav="programmes">Programmes</a>
+      <a href="admissions.html" data-nav="admissions">Admissions</a>
+      <a href="news.html" data-nav="news">News</a>
+      <a href="events.html" data-nav="events">Events</a>
+      <a href="contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-outline btn-header" href="portal-student.html">Student Portal</a>
+      <a class="btn btn-outline btn-header" href="portal-staff.html">Staff Portal</a>
+      <a class="btn btn-primary btn-header" href="admissions.html">Apply Now</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="page-hero">
+    <img class="hero-contours" src="assets/contours.svg" alt="" style="opacity:0.3;">
+    <div class="container" style="position:relative; z-index:2;">
+      <span class="breadcrumb"><a href="index.html">Home</a> / Admissions</span>
+      <h1>Admissions</h1>
+      <p>Six steps to join the AFASTECH family.</p>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="grid grid-2" style="align-items:start; margin-bottom:1rem;">
+        <div class="card">
+          <h4>Documents to prepare</h4>
+          <ul style="padding-left:1.2em; color:var(--stone); margin:0;">
+            <li>CSSPS Placement Form <span class="tag" style="margin-left:0.3rem;">Required</span></li>
+            <li>BECE Result Slip <span class="tag" style="margin-left:0.3rem;">Required</span></li>
+            <li>Active NHIS Card <span class="tag" style="margin-left:0.3rem;">Required</span></li>
+            <li>Medical Examination Report <span class="tag tag-gold" style="margin-left:0.3rem;">Optional</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Need help?</h4>
+          <p>Call or WhatsApp the school office if you run into any trouble with your voucher or forms.</p>
+          <p style="margin-top:0.6rem;"><strong><a href="tel:0248962693">0248962693</a></strong><br><a href="mailto:afadjatoseniorhightech@gmail.com">afadjatoseniorhightech@gmail.com</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container" style="max-width:820px;">
+
+      <div class="progress-track" role="list" aria-label="Application progress">
+        <div class="progress-step active" role="listitem"><span class="dot">1</span>Placement</div>
+        <div class="progress-connector"></div>
+        <div class="progress-step" role="listitem"><span class="dot">2</span>Voucher</div>
+        <div class="progress-connector"></div>
+        <div class="progress-step" role="listitem"><span class="dot">3</span>Forms</div>
+        <div class="progress-connector"></div>
+        <div class="progress-step" role="listitem"><span class="dot">4</span>Class</div>
+        <div class="progress-connector"></div>
+        <div class="progress-step" role="listitem"><span class="dot">5</span>Prospectus</div>
+        <div class="progress-connector"></div>
+        <div class="progress-step" role="listitem"><span class="dot">6</span>Letter</div>
+      </div>
+      <p id="wizard-live" class="visually-hidden" aria-live="polite"></p>
+
+      <form id="admissions-wizard" class="form-card" novalidate>
+
+        <!-- Step 1: Confirm Placement -->
+        <div class="wizard-step">
+          <h3>Confirm your placement</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Enter your BECE index number and exam year exactly as they appear on your results slip.</p>
+          <div class="field">
+            <label for="indexNumber">BECE index number</label>
+            <input type="text" id="indexNumber" name="indexNumber" required placeholder="e.g. 3012105034">
+            <div class="field-error">Enter your BECE index number.</div>
+          </div>
+          <div class="field">
+            <label for="examYear">Exam year</label>
+            <select id="examYear" name="examYear" required>
+              <option value="">Select year</option>
+              <option>2026</option>
+              <option>2025</option>
+              <option>2024</option>
+            </select>
+            <div class="field-error">Select your exam year.</div>
+          </div>
+          <button class="btn btn-primary" type="button" data-wizard-next>Continue</button>
+        </div>
+
+        <!-- Step 2: Redeem Voucher -->
+        <div class="wizard-step" hidden>
+          <h3>Redeem your voucher</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Purchase your admission voucher using the short code <strong>*713*8849#</strong>, then enter the serial number and PIN below.</p>
+          <div id="voucher-result" class="alert" role="status"></div>
+          <div class="field-row">
+            <div class="field">
+              <label for="voucherSerial">Voucher serial number</label>
+              <input type="text" id="voucherSerial" name="voucherSerial" required placeholder="e.g. AFT-2025-8841">
+              <div class="field-error">Enter your voucher serial number.</div>
+            </div>
+            <div class="field">
+              <label for="voucherPin">Voucher PIN</label>
+              <input type="text" id="voucherPin" name="voucherPin" required placeholder="e.g. 4471 9902">
+              <div class="field-error">Enter your voucher PIN.</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.8rem;">
+            <button class="btn btn-outline" type="button" data-wizard-back>Back</button>
+            <button class="btn btn-primary" type="button" data-wizard-next>Verify &amp; Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Complete Forms -->
+        <div class="wizard-step" hidden>
+          <h3>Complete your forms</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Add student, contact, and guardian information.</p>
+          <div class="field-row">
+            <div class="field">
+              <label for="fullName">Student full name</label>
+              <input type="text" id="fullName" name="fullName" required>
+              <div class="field-error">Enter the student's full name.</div>
+            </div>
+            <div class="field">
+              <label for="dob">Date of birth</label>
+              <input type="date" id="dob" name="dob" required>
+              <div class="field-error">Enter date of birth.</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="guardianName">Guardian's name</label>
+              <input type="text" id="guardianName" name="guardianName" required>
+              <div class="field-error">Enter guardian's name.</div>
+            </div>
+            <div class="field">
+              <label for="guardianPhone">Guardian's phone number</label>
+              <input type="tel" id="guardianPhone" name="guardianPhone" required placeholder="0XX XXX XXXX">
+              <div class="field-error">Enter a contact phone number.</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.8rem;">
+            <button class="btn btn-outline" type="button" data-wizard-back>Back</button>
+            <button class="btn btn-primary" type="button" data-wizard-next>Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Choose a Class -->
+        <div class="wizard-step" hidden>
+          <h3>Choose a programme</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Review available programmes and subject combinations.</p>
+          <div class="field">
+            <label for="programmeChoice">Programme</label>
+            <select id="programmeChoice" name="programmeChoice" required>
+              <option value="">Select a programme</option>
+              <option value="agric">Agricultural Science</option>
+              <option value="business">Business</option>
+              <option value="arts">General Arts</option>
+              <option value="home-ec">Home Economics</option>
+              <option value="technical">Technical Skills / Applied Technology</option>
+            </select>
+            <div class="field-error">Select a programme.</div>
+            <p class="hint">See full subject combinations on the <a href="programmes.html">Programmes</a> page.</p>
+          </div>
+          <div class="field">
+            <label for="residency">Residency</label>
+            <select id="residency" name="residency" required>
+              <option value="">Select residency</option>
+              <option value="boarding">Boarding</option>
+              <option value="day">Day</option>
+            </select>
+            <div class="field-error">Select boarding or day.</div>
+          </div>
+          <div style="display:flex; gap:0.8rem;">
+            <button class="btn btn-outline" type="button" data-wizard-back>Back</button>
+            <button class="btn btn-primary" type="button" data-wizard-next>Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Review Prospectus -->
+        <div class="wizard-step" hidden>
+          <h3>Review your prospectus</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Download your school list and reporting guidance before continuing.</p>
+          <div class="card" style="background:var(--paper-dim); margin-bottom:1.2rem;">
+            <h4>School list &amp; reporting guidance</h4>
+            <p>Includes uniform requirements, boarding items checklist, and the reporting date for fresh students.</p>
+            <a class="btn btn-outline" href="#" onclick="return false;">Download prospectus (PDF)</a>
+          </div>
+          <div style="display:flex; gap:0.8rem;">
+            <button class="btn btn-outline" type="button" data-wizard-back>Back</button>
+            <button class="btn btn-primary" type="button" data-wizard-next>Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 6: Get Letter -->
+        <div class="wizard-step" hidden>
+          <h3>Your admission summary</h3>
+          <p style="color:var(--stone); margin-bottom:1.4rem;">Confirm the details below, then submit to download your admission letter.</p>
+          <table class="data-table" style="margin-bottom:1.4rem;">
+            <tbody id="wizard-summary"></tbody>
+          </table>
+          <div class="alert alert-success show" role="status">This is a front-end demo — no data is submitted to a server. Connect a backend to issue real admission letters.</div>
+          <button class="btn btn-gold" type="button" onclick="alert('In the live site, this would generate and download your admission letter.');">Submit &amp; Download Letter</button>
+        </div>
+
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest"><span>AFASTECH</span></div>
+        <p style="color:var(--forest-100); max-width:32ch;">Knowledge, Integrity, Patriotism. Gbledi Gbogame, Hohoe Municipal, Volta Region, Ghana. Est. 1987.</p>
+      </div>
+      <div class="footer-col"><h5>Quick Links</h5><ul>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="programmes.html">Programmes</a></li>
+        <li><a href="admissions.html">Admissions</a></li>
+        <li><a href="news.html">News &amp; Media</a></li>
+        <li><a href="events.html">Events</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Portals</h5><ul>
+        <li><a href="portal-student.html">Student Portal</a></li>
+        <li><a href="portal-staff.html">Staff Portal</a></li>
+        <li><a href="admissions.html">Apply Now</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Contact</h5><ul>
+        <li><a href="tel:0248962693">0248962693</a></li>
+        <li><a href="mailto:afadjatoseniorhightech@gmail.com">afadjatoseniorhightech@gmail.com</a></li>
+        <li>Gbledi Gbogame, Volta Region</li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span data-year></span> Afadjato Senior High Technical School. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/admissions.js"></script>
+</body>
+</html>

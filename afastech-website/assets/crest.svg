@@ -1,0 +1,38 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="crestTitle">
+  <title id="crestTitle">AFASTECH crest: Mount Afadja, an open book, and a tape measure</title>
+  <circle cx="50" cy="50" r="48" fill="#f6f3ea" stroke="#1f4d36" stroke-width="2.5"/>
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#d6a431" stroke-width="1.2"/>
+
+  <!-- Mount Afadja, top half -->
+  <clipPath id="topHalf">
+    <rect x="2" y="2" width="96" height="46"/>
+  </clipPath>
+  <g clip-path="url(#topHalf)">
+    <rect x="2" y="2" width="96" height="46" fill="#e4ede6"/>
+    <polygon points="10,48 34,14 46,30 58,10 90,48" fill="#3c7350"/>
+    <polygon points="46,30 58,10 66,22 90,48 58,48 50,36" fill="#275e42"/>
+    <polygon points="55,15 58,10 61,15 58,20" fill="#f6f3ea"/>
+  </g>
+
+  <!-- Open book, bottom-left -->
+  <g transform="translate(16,53)">
+    <path d="M0 6 C7 1 15 1 20 6 L20 24 C15 20 7 20 0 24 Z" fill="#f6f3ea" stroke="#1f4d36" stroke-width="1.4"/>
+    <path d="M20 6 C25 1 33 1 40 6 L40 24 C33 20 25 20 20 24 Z" fill="#f6f3ea" stroke="#1f4d36" stroke-width="1.4"/>
+    <line x1="20" y1="6" x2="20" y2="24" stroke="#1f4d36" stroke-width="1.2"/>
+    <line x1="4" y1="9" x2="16" y2="7.5" stroke="#8b9389" stroke-width="1"/>
+    <line x1="4" y1="13" x2="16" y2="11.5" stroke="#8b9389" stroke-width="1"/>
+    <line x1="24" y1="7.5" x2="36" y2="9" stroke="#8b9389" stroke-width="1"/>
+    <line x1="24" y1="11.5" x2="36" y2="13" stroke="#8b9389" stroke-width="1"/>
+  </g>
+
+  <!-- Tape measure, bottom-right -->
+  <g transform="translate(58,53)">
+    <rect x="0" y="4" width="26" height="18" rx="2" fill="#d6a431" stroke="#1f4d36" stroke-width="1.4"/>
+    <circle cx="13" cy="13" r="5.5" fill="#f6f3ea" stroke="#1f4d36" stroke-width="1.2"/>
+    <rect x="11.3" y="0" width="3.4" height="6" fill="#f6f3ea" stroke="#1f4d36" stroke-width="1"/>
+    <line x1="4" y1="9" x2="4" y2="17" stroke="#1f4d36" stroke-width="0.8"/>
+    <line x1="7.5" y1="10" x2="7.5" y2="16" stroke="#1f4d36" stroke-width="0.6"/>
+    <line x1="18.5" y1="10" x2="18.5" y2="16" stroke="#1f4d36" stroke-width="0.6"/>
+    <line x1="22" y1="9" x2="22" y2="17" stroke="#1f4d36" stroke-width="0.8"/>
+  </g>
+</svg>

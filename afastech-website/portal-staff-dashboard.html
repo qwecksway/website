@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Dashboard — AFASTECH</title>
+<link rel="icon" href="assets/crest.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="staff-dashboard">
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="announce-bar">
+  <div class="announce-track">
+    <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
+    <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
+  </div>
+</div>
+<header class="portal-dash-header">
+  <div class="container">
+    <a class="brand" href="index.html" style="color:var(--white);">
+      <img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Staff Portal</span></span>
+    </a>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Staff</strong></span>
+      <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="staff">Sign Out</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="portal-shell">
+  <div class="container dash-grid">
+    <nav aria-label="Dashboard">
+      <ul class="dash-nav">
+        <li><a class="active" href="portal-staff-dashboard.html">Overview</a></li>
+        <li><a href="#classes">My Classes</a></li>
+        <li><a href="#gradebook">Gradebook</a></li>
+        <li><a href="#notices">Staff Notices</a></li>
+        <li><a href="#calendar">Calendar</a></li>
+      </ul>
+    </nav>
+
+    <div>
+      <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
+      <div data-dashboard-content hidden>
+
+      <h1>Welcome back</h1>
+      <p style="color:var(--stone); margin-bottom:2rem;">Your class assignments and pending gradebook entries.</p>
+
+      <h3 id="classes">My classes this week</h3>
+      <table class="data-table" style="margin-bottom:2.5rem;">
+        <thead><tr><th>Day</th><th>Class</th><th>Subject</th></tr></thead>
+        <tbody id="staff-assignments"></tbody>
+      </table>
+      <p id="staff-assignments-status" role="status" style="color:var(--stone);"></p>
+
+      <h3 id="gradebook">Pending gradebook entries</h3>
+      <table class="data-table" style="margin-bottom:2.5rem;">
+        <thead><tr><th>Class</th><th>Assessment</th><th>Status</th></tr></thead>
+        <tbody id="staff-gradebook"></tbody>
+      </table>
+      <p id="staff-gradebook-status" role="status" style="color:var(--stone);"></p>
+
+      <h3 id="notices">Staff notices</h3>
+      <div id="portal-announcements"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>
