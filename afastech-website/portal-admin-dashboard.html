@@ -64,9 +64,8 @@
               <input type="email" id="admin-staff-email" name="email" maxlength="254" autocomplete="email" required>
             </div>
             <div class="field">
-              <label for="admin-staff-position">Job title</label>
-              <select id="admin-staff-position" name="position" required>
-                <option value="">Choose a job title</option>
+              <label for="admin-staff-position">Job titles (select all that apply)</label>
+              <select id="admin-staff-position" name="position" multiple required>
                 <option value="Teacher">Teacher</option>
                 <option value="House Master">House Master</option>
                 <option value="House Mistress">House Mistress</option>
@@ -75,6 +74,7 @@
                 <option value="Headteacher">Headteacher</option>
                 <option value="Non-Teaching Staff">Non-Teaching Staff</option>
               </select>
+              <small>Select every applicable title. Use Ctrl on Windows or Command on Mac to select multiple titles.</small>
             </div>
             <div class="field">
               <label for="admin-staff-department">Department (optional)</label>
@@ -111,7 +111,7 @@
         <p style="color:var(--stone);">Only staff explicitly assigned the House Master or House Mistress job title can be assigned to a house.</p>
         <div style="overflow-x:auto;margin-bottom:2rem;">
           <table class="data-table">
-            <thead><tr><th>Staff member</th><th>Job title</th><th>Department</th><th>Update</th></tr></thead>
+            <thead><tr><th>Staff member</th><th>Job titles</th><th>Department</th><th>Update</th></tr></thead>
             <tbody id="admin-staff-details"></tbody>
           </table>
         </div>

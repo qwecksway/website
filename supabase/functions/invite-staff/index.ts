@@ -79,7 +79,10 @@ Deno.serve(async (request) => {
 
   const fullName = typeof input.full_name === "string" ? input.full_name.trim() : "";
   const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
-  const position = typeof input.position === "string" ? input.position.trim() : "";
+  const positions = Array.isArray(input.position)
+    ? input.position.filter((position): position is string => typeof position === "string")
+      .map((position) => position.trim())
+    : [];
   const department = typeof input.department === "string" ? input.department.trim() : "";
   const temporaryPassword = typeof input.temporary_password === "string"
     ? input.temporary_password
@@ -91,8 +94,14 @@ Deno.serve(async (request) => {
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return response({ error: "Enter a valid school email address." }, 400, requestOrigin);
   }
-  if (!allowedPositions.has(position)) {
-    return response({ error: "Choose a job title from the approved list." }, 400, requestOrigin);
+  if (
+    positions.length === 0 ||
+    !Array.isArray(input.position) ||
+    positions.length !== input.position.length ||
+    positions.length !== new Set(positions).size ||
+    positions.some((position) => !allowedPositions.has(position))
+  ) {
+    return response({ error: "Choose one or more unique job titles from the approved list." }, 400, requestOrigin);
   }
   if (department && !allowedDepartments.has(department)) {
     return response({ error: "Choose a department from the approved list." }, 400, requestOrigin);
@@ -161,7 +170,7 @@ Deno.serve(async (request) => {
     .upsert(
       {
         profile_id: userId,
-        position,
+        position: positions.join(", "),
         department: department || null,
       },
       { onConflict: "profile_id" },

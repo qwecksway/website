@@ -588,21 +588,25 @@
       var departmentCell = document.createElement("td");
       var actionCell = document.createElement("td");
       var titleSelect = document.createElement("select");
+      titleSelect.multiple = true;
+      titleSelect.size = 4;
+      titleSelect.setAttribute("aria-label", "Job titles for " + (member.full_name || "staff member"));
       var departmentSelect = document.createElement("select");
       var save = document.createElement("button");
       identity.textContent = (member.full_name || "Staff member") + " — " + member.email;
 
-      var titlePlaceholder = document.createElement("option");
-      titlePlaceholder.value = "";
-      titlePlaceholder.textContent = "Choose job title";
-      titleSelect.appendChild(titlePlaceholder);
       titles.forEach(function (title) {
         var option = document.createElement("option");
         option.value = title;
         option.textContent = title;
         titleSelect.appendChild(option);
       });
-      titleSelect.value = member.job_title || "";
+      var selectedTitles = String(member.job_title || "").split(",").map(function (title) {
+        return title.trim();
+      });
+      Array.from(titleSelect.options).forEach(function (option) {
+        option.selected = selectedTitles.indexOf(option.value) !== -1;
+      });
 
       var departmentPlaceholder = document.createElement("option");
       departmentPlaceholder.value = "";
@@ -623,7 +627,9 @@
         try {
           var update = await client.rpc("admin_update_staff_details", {
             target_staff_id: member.id,
-            target_position: titleSelect.value,
+            target_position: Array.from(titleSelect.selectedOptions).map(function (option) {
+              return option.value;
+            }).join(", "),
             target_department: departmentSelect.value
           });
           if (update.error) throw update.error;
@@ -1032,7 +1038,9 @@
           body: {
             full_name: String(data.get("full_name") || "").trim(),
             email: String(data.get("email") || "").trim().toLowerCase(),
-            position: String(data.get("position") || "").trim(),
+            position: data.getAll("position").map(function (position) {
+              return String(position).trim();
+            }),
             department: String(data.get("department") || "").trim(),
             temporary_password: temporaryPassword
           }
