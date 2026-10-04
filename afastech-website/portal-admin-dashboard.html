@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Super Admin Dashboard — AFASTECH</title>
+<link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin-dashboard">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="announce-bar">
+  <div class="announce-track">
+    <span class="announce-copy">AFASTECH — Administration Portal</span>
+    <span class="announce-copy" aria-hidden="true">AFASTECH — Administration Portal</span>
+  </div>
+</div>
+<header class="portal-dash-header">
+  <div class="container">
+    <a class="brand" href="index.html" style="color:var(--white);">
+      <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
+      <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Super Admin Portal</span></span>
+    </a>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Super Admin</strong></span>
+      <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="admin">Sign Out</a>
+    </div>
+  </div>
+</header>
+<main id="main" class="portal-shell">
+  <div class="container dash-grid">
+    <nav aria-label="Administration">
+      <ul class="dash-nav">
+        <li><a class="active" href="portal-admin-dashboard.html">Overview</a></li>
+        <li><a href="#accounts">Portal accounts</a></li>
+        <li><a href="#houses">House assignments</a></li>
+        <li><a href="#fees">Student fee records</a></li>
+        <li><a href="#provisioning">Provisioning guide</a></li>
+      </ul>
+    </nav>
+    <div>
+      <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
+      <div data-dashboard-content hidden>
+        <h1>Super Admin</h1>
+        <p style="color:var(--stone); margin-bottom:2rem;">Manage portal access, school houses, house assignments, and student fee records.</p>
+        <div class="grid grid-3" style="margin-bottom:2.5rem;">
+          <div class="card"><h4>Portal accounts</h4><p data-admin-total>0</p></div>
+          <div class="card"><h4>Staff accounts</h4><p data-admin-staff-count>0</p></div>
+        </div>
+        <h2 id="accounts">Portal accounts</h2>
+        <div style="overflow-x:auto;">
+          <table class="data-table" style="margin-bottom:2rem;">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Set role</th></tr></thead>
+            <tbody id="admin-profiles"></tbody>
+          </table>
+        </div>
+        <section id="houses" style="margin-bottom:2.5rem;">
+          <h2>Houses and assignments</h2>
+          <form id="admin-house-form" class="card" style="margin-bottom:1rem;">
+            <div class="field">
+              <label for="admin-house-name">Add a house</label>
+              <input type="text" id="admin-house-name" maxlength="100" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Create House</button>
+          </form>
+          <form id="admin-house-assignment-form" class="card">
+            <div class="field">
+              <label for="admin-house-person">Student or House Master</label>
+              <select id="admin-house-person" required></select>
+            </div>
+            <div class="field">
+              <label for="admin-house-select">House</label>
+              <select id="admin-house-select" required></select>
+            </div>
+            <button class="btn btn-primary" type="submit">Assign to House</button>
+          </form>
+          <p id="admin-house-status" role="status" style="color:var(--stone);"></p>
+        </section>
+        <section id="fees" style="margin-bottom:2.5rem;">
+          <h2>Student fee records</h2>
+          <p style="color:var(--stone);">These are the same records shown on each student's dashboard.</p>
+          <div style="overflow-x:auto;">
+            <table class="data-table" style="margin-bottom:1rem;">
+              <thead><tr><th>Student</th><th>House</th><th>Fee status</th><th>Update</th></tr></thead>
+              <tbody id="admin-student-fees"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="card" id="provisioning">
+          <h3>Invite a user</h3>
+          <p>For security, create or invite the user through Supabase Authentication first. Their new account will appear here as pending. Then assign Student or Staff access above.</p>
+          <p><strong>Super Admin access cannot be granted from this page.</strong> The first Super Admin must be provisioned by an existing trusted database operator.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>

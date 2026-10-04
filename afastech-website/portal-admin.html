@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Super Admin Sign In — AFASTECH</title>
+<meta name="description" content="Secure Super Admin access to the AFASTECH portal.">
+<link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin-portal">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="announce-bar">
+  <div class="announce-track">
+    <span class="announce-copy">AFASTECH — Administrator Access</span>
+    <span class="announce-copy" aria-hidden="true">AFASTECH — Administrator Access</span>
+  </div>
+</div>
+<main id="main">
+  <div class="login-shell">
+    <div class="login-card">
+      <img class="login-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
+      <p class="login-kicker">Restricted Super Admin access</p>
+      <h1>Super Admin Portal</h1>
+      <p class="login-sub">Sign in with a Super Admin account provisioned by the school.</p>
+      <div id="portal-alert" class="alert" role="status"></div>
+      <form id="portal-login" data-portal="admin">
+        <div class="field">
+          <label for="portalId">Super Admin email</label>
+          <input type="email" id="portalId" name="portalId" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="portalPass">Password</label>
+          <input type="password" id="portalPass" name="portalPass" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Sign In</button>
+      </form>
+      <p class="demo-note">Super Admin accounts are invite-only. Contact the system owner if you need access.</p>
+    </div>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© <span data-year></span> Afadjato Senior High Technical School. All rights reserved.</span>
+      <span><a href="contact.html" style="color:var(--forest-100);">Need help signing in?</a></span>
+    </div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>

@@ -17,18 +17,21 @@ afastech-website/
 ├── contact.html                   Contact form, staff contacts, map
 ├── portal-student.html            Student sign-in (Supabase Auth)
 ├── portal-staff.html              Staff sign-in (Supabase Auth)
+├── portal-admin.html              Super Admin sign-in (Supabase Auth)
 ├── portal-student-dashboard.html  Student dashboard (RLS-protected data)
 ├── portal-staff-dashboard.html    Staff dashboard (RLS-protected data)
+├── portal-admin-dashboard.html    Super Admin account, house, and fee tools
 ├── css/style.css                  Shared design system
 ├── js/main.js                     Nav toggle, current-page highlighting, footer year
 ├── js/admissions.js               Admissions wizard logic
 ├── js/portal.js                   Supabase Auth and portal data access
 ├── js/supabase-config.js          Public Supabase URL and publishable key
-├── supabase/migrations/           Database schema and RLS policies
 └── assets/
-    ├── crest.svg                  School crest (mountain, book, tape measure)
+    ├── afastech-crest.jpg          Official AFASTECH school crest
     └── contours.svg               Topographic hero background
 ```
+
+Supabase configuration and database migrations are kept in the repository-root `supabase/` directory, alongside this site folder.
 
 ## What's real vs. placeholder
 
@@ -46,33 +49,44 @@ District/region, founding year and story, land size, boarding-since-2017 note, h
 
 The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.112.3). Browser code contains only the project URL and publishable/anon key; database access is restricted by Postgres Row Level Security (RLS). Never put a `service_role` or secret key in this static site.
 
-1. Review `supabase/migrations/202610030001_portal_security.sql` against the existing Supabase schema. It creates the portal tables, enables RLS, and grants authenticated users read-only access to their own role-appropriate records. Adapt it before applying if any of these tables or policies already exist.
-2. Install the Supabase CLI. From the project root, initialize its local config once, then link the existing project and apply the migration:
+1. The live Supabase project already contains `profiles`, `student_details`, `staff_details`, the `user_role` type, existing administrator policies, and an Auth user trigger. The migrations intentionally preserve those objects. `202610030001_portal_security.sql` is a guarded adoption baseline: it checks that existing schema before any new migration runs. `202610040001_admin_foundation.sql` adds portal-only read tables, admin role management, and leaves newly invited profiles pending instead of automatically assigning the Student role. `202610040002_shared_house_fee_records.sql` extends the existing `student_details` row with shared house and fee fields; it does not create a duplicate student profile. `202610040003_profile_role_update_guard.sql` prevents users from changing their own portal role through direct profile updates.
+2. Install the Supabase CLI. From the repository root (`C:\WEBSITE`), link the existing project and check its migration history before applying changes:
 
     ```powershell
-    supabase init
     supabase login
     supabase link --project-ref YOUR_PROJECT_REF
-    supabase db push
+    supabase migration list
+    supabase db push --linked --dry-run --skip-vault
+    supabase db push --linked --skip-vault
     ```
+
+   The adoption baseline is intentionally safe to execute on the linked project; it makes no schema changes and fails unless the existing schema matches the expected portal foundation. Do not mark it applied manually.
 
 3. In Supabase Project Settings / API, copy the Project URL and publishable (or legacy anon) key into `js/supabase-config.js`. These values are public by design; the RLS policies are the protection. Do not copy a secret or `service_role` key there.
-4. In Authentication settings, disable public sign-ups. Invite student and staff accounts through the administrator workflow. Set the production Site URL and exact allowed redirect URLs for the deployed website.
-5. The migration creates a pending profile after Auth user creation. An administrator must assign its role in SQL Editor after inviting the user. Example:
+4. In Authentication settings, disable public sign-ups. Set the production Site URL and exact allowed redirect URLs for the deployed website. Invite student and staff accounts from Supabase Authentication.
+5. Provision the first administrator through a trusted database operator—not through the website. Invite the account through Supabase Authentication, then assign the role in SQL Editor using its exact email:
 
     ```sql
-    update public.profiles
-    set role = 'student', full_name = 'Student Name'
-    where id = (select id from auth.users where email = 'student@example.edu');
+    update public.profiles as p
+    set role = 'admin'
+    from auth.users as u
+    where p.id = u.id
+      and lower(u.email) = lower('admin@example.edu')
+    returning p.id;
     ```
 
-    Use `staff` for staff accounts. Never grant role changes through user-editable profile fields. The login currently uses email/password because that is Supabase Auth's supported password flow; school IDs can be displayed as profile data but must not replace the Auth identity without a trusted server-side lookup.
+    Confirm the query returns exactly the intended account. Only this trusted SQL provisioning process can grant `admin`; the Super Admin portal can assign only `student` or `staff` roles. Newly invited accounts remain pending until an administrator explicitly assigns a role. Share the Super Admin URL (`portal-admin.html`) privately with authorized administrators; it is intentionally not linked from public website navigation.
 6. In Supabase Authentication settings, review email/password policy, configure a trusted SMTP provider, enable CAPTCHA if appropriate, and set Auth rate limits and session time-box/inactivity limits to school policy. Password hashing and verification are handled by Supabase Auth. The website does not store or hash passwords itself.
-7. Serve and test over HTTPS using the real deployment origin. The dashboards query only their role-scoped tables, and all fetched values are inserted as text. SQL access uses Supabase's structured query API; do not add interpolated/raw SQL for user input.
+7. In the Super Admin portal, create houses, assign students and House Masters, and review or update student fee statuses. A House Master can update only students in assigned houses; the Super Admin can manage all student fee statuses. Both write to the same `student_details` row that the student's portal reads. Supabase Realtime sends fee-status changes to an already-open student dashboard.
+8. Serve and test over HTTPS using the real deployment origin. Database access is restricted by RLS, and privileged account and fee operations use role-checked database functions; never expose a `service_role` key or grant users roles through editable metadata.
+
+The initial fee workflow updates the existing `fees_status` field (for example, a school-defined status). It is not yet a transaction ledger for amounts, payments, balances, or receipts.
 
 The site calls Supabase Auth and Data APIs directly, so there is no custom API server or Edge Function CORS middleware in this project. Set exact Auth redirect URLs and configure your hosting security headers for the deployment. If Edge Functions are added later, allow only the exact deployed site origin and required headers; do not use wildcard origins for authenticated operations. CORS is not a substitute for RLS or authorization.
 
-This initial portal supports read-only dashboards. It deliberately does not grant browser writes for grades, student records, staff assignments, or announcements. Build and test narrowly scoped RLS write policies (or trusted Edge Functions) before adding those workflows. Review RLS behavior using separate student and staff test accounts before using real records.
+Gradebook, student results, and announcements remain read-only in this phase. Add narrowly scoped role-checked operations before enabling edits to those records. Review access using separate student, staff, and Super Admin test accounts before using real school data.
+
+Public navigation exposes only the Student and Staff portals. The Super Admin login is a separate, privately shared URL and is marked `noindex`; this reduces public discoverability but is not an access-control measure. Authentication and database role checks protect the admin tools.
 
 ## Before publishing
 

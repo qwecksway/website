@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Staff Dashboard — AFASTECH</title>
-<link rel="icon" href="assets/crest.svg" type="image/svg+xml">
+<link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
@@ -21,7 +21,7 @@
 <header class="portal-dash-header">
   <div class="container">
     <a class="brand" href="index.html" style="color:var(--white);">
-      <img class="brand-crest" src="assets/crest.svg" alt="AFASTECH crest">
+      <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
       <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Staff Portal</span></span>
     </a>
     <div style="display:flex; align-items:center; gap:1rem;">
@@ -63,6 +63,18 @@
         <tbody id="staff-gradebook"></tbody>
       </table>
       <p id="staff-gradebook-status" role="status" style="color:var(--stone);"></p>
+
+      <section id="house-fees">
+        <h3>House student fee records</h3>
+        <p style="color:var(--stone);">Fee changes are saved to the student's school record and appear on their dashboard immediately.</p>
+        <div style="overflow-x:auto;">
+          <table class="data-table" style="margin-bottom:1rem;">
+            <thead><tr><th>Student</th><th>House</th><th>Fee status</th><th>Update</th></tr></thead>
+            <tbody id="staff-house-fees"></tbody>
+          </table>
+        </div>
+        <p id="staff-house-fees-status" role="status" style="color:var(--stone);"></p>
+      </section>
 
       <h3 id="notices">Staff notices</h3>
       <div id="portal-announcements"></div>
