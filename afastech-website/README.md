@@ -65,7 +65,7 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
    The adoption baseline is intentionally safe to execute on the linked project; it makes no schema changes and fails unless the existing schema matches the expected portal foundation. Do not mark it applied manually.
 
 3. In Supabase Project Settings / API, copy the Project URL and publishable (or legacy anon) key into `js/supabase-config.js`. These values are public by design; the RLS policies are the protection. Do not copy a secret or `service_role` key there.
-4. In Authentication settings, disable public sign-ups. Set the production Site URL and exact allowed redirect URLs for the deployed website. Invite student and staff accounts from Supabase Authentication.
+4. In Authentication settings, disable public sign-ups. Set the production Site URL and exact allowed redirect URLs for the deployed website. Create staff accounts through the Super Admin portal. Create student accounts only through the protected student roster import.
 5. Provision the first administrator through a trusted database operator—not through the website. Invite the account through Supabase Authentication, then assign the role in SQL Editor using its exact email:
 
     ```sql
@@ -80,10 +80,11 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
     Confirm the query returns exactly the intended account. Only this trusted SQL provisioning process can grant `admin`; the Super Admin portal can assign only `student` or `staff` roles. Newly invited accounts remain pending until an administrator explicitly assigns a role. Share the Super Admin URL (`portal-admin.html`) privately with authorized administrators; it is intentionally not linked from public website navigation.
 6. Configure the staff-account Edge Function. In Supabase Edge Functions → Secrets, set `ALLOWED_ORIGINS` to the exact website origin (scheme and host only, no path). Supabase supplies its project URL, anon key, and service-role key to the Edge Function runtime. Never place the service-role key in website code or send it to the browser.
 
-   From the repository root, deploy only the staff-account function (the API bundler avoids requiring Docker):
+   From the repository root, deploy the staff and student-account functions (the API bundler avoids requiring Docker):
 
     ```powershell
     supabase functions deploy invite-staff --project-ref YOUR_PROJECT_REF --use-api
+    supabase functions deploy import-student-roster --project-ref YOUR_PROJECT_REF --use-api
     ```
 
    The function verifies the signed-in caller's database role, creates a confirmed Supabase Auth user with the temporary password entered by the Super Admin, assigns the Staff role, and stores the selected job titles and department in `staff_details`. Job titles are Teacher, House Master, House Mistress, Head of Department, Assistant Head, Headteacher, or Non-Teaching Staff; select all that apply. Departments are MATHS/ICT, SCIENCE, ENGLISH, BUSINESS, TECHNICAL, or HOME ECONOMICS (optional). This flow sends no email and does not require SMTP. Share the temporary password privately; staff and teachers sign in through the Staff Portal and should change it immediately using Account security. Staff and teachers share the `staff` role; their job titles distinguish their positions.
@@ -93,7 +94,9 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
 
 ## Academic management (Phase 2)
 
-After applying migrations `202610040004_academic_management.sql`, `202610040005_staff_house_roles_and_semesters.sql`, and `202610040006_multiple_staff_job_titles.sql`, use the private Super Admin portal to set academic years and the school's two semesters, create programmes/classes/departments/subjects, enrol existing student accounts, and allocate subjects to existing staff accounts. Mark entry is limited to the assigned teacher and enrolled students; marks use the existing 0–100 scale. Teachers submit complete assessments for review, and students can see marks only after an administrator publishes them. Student results include previously stored `student_results` rows as well as published academic assessments.
+After applying migrations `202610040004_academic_management.sql`, `202610040005_staff_house_roles_and_semesters.sql`, `202610040006_multiple_staff_job_titles.sql`, and `202610040007_student_roster_import.sql`, use the private Super Admin portal to set academic years and the school's two semesters, create programmes/classes/departments/subjects, enrol existing student accounts, and allocate subjects to existing staff accounts. Mark entry is limited to the assigned teacher and enrolled students; marks use the existing 0–100 scale. Teachers submit complete assessments for review, and students can see marks only after an administrator publishes them. Student results include previously stored `student_results` rows as well as published academic assessments.
+
+The Super Admin can import a privacy-minimized CSV/TSV roster for the 2024-entry cohort. The importer validates the school code, CassRefID, learning area, and entry year; creates one Supabase Auth account per student; enrols each in SHS 3 for 2026/2027; and can mark that year current. Students sign in using their CassRefID and a unique, randomly generated temporary password. The Super Admin receives the passwords in a one-time CSV download; the application does not store or email those passwords. Hand the file to students privately and delete local copies after distribution. Students can change their passwords at any time from Account security after signing in. These accounts use internal non-deliverable Auth email aliases, so password recovery by email is unavailable; a Super Admin must assist students who lose access. Configure semester dates separately before using semester-based academic workflows.
 
 Bulk PDF result processing is not enabled yet. The school must provide a representative, privacy-scrubbed result PDF and confirm its official result layout and grading rules before a parser or import workflow can be designed; extracted marks must be staged and reviewed before publication.
 

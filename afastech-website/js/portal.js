@@ -11,6 +11,7 @@
     staff: "portal-staff-dashboard.html",
     admin: "portal-admin-dashboard.html"
   };
+  var STUDENT_LOGIN_DOMAIN = "students.afastech.invalid";
   var staffAcademicAssignments = [];
   var staffAcademicAssessments = [];
 
@@ -99,7 +100,14 @@
     var studentName = document.querySelector("[data-student-full-name]");
     if (studentName) studentName.textContent = fullName || "Not set";
     var studentEmail = document.querySelector("[data-student-email]");
-    if (studentEmail) studentEmail.textContent = email || "Not set";
+    var studentLoginMatch = typeof email === "string"
+      ? email.match(/^refid-([a-z0-9]{12})@students\.afastech\.invalid$/i)
+      : null;
+    if (studentEmail) {
+      studentEmail.textContent = studentLoginMatch
+        ? studentLoginMatch[1].toUpperCase()
+        : email || "Not set";
+    }
   }
 
   async function loadStudentDashboard(client, userId) {
@@ -698,6 +706,9 @@
     setSelectOptions(document.getElementById("admin-academic-enrol-year"), years, "Choose a year", "id", function (item) {
       return item.name + (item.is_current ? " (current)" : "");
     });
+    setSelectOptions(document.getElementById("admin-student-import-year"), years, "Choose an academic year", "name", function (item) {
+      return item.name + (item.is_current ? " (current)" : "");
+    });
     setSelectOptions(document.getElementById("admin-academic-class-programme"), programmes, "Choose a programme", "id", function (item) {
       return item.name;
     });
@@ -1078,15 +1089,16 @@
     });
   }
 
-  function initializeStaffPasswordChange(client) {
-    var form = document.getElementById("staff-password-form");
+  function initializePasswordChange(client, formId, statusId) {
+    var form = document.getElementById(formId);
     if (!form) return;
-    var status = document.getElementById("staff-password-status");
+    var status = document.getElementById(statusId);
+    var prefix = formId === "student-password-form" ? "student" : "staff";
 
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
-      var password = document.getElementById("staff-new-password").value;
-      var confirmation = document.getElementById("staff-confirm-password").value;
+      var password = document.getElementById(prefix + "-new-password").value;
+      var confirmation = document.getElementById(prefix + "-confirm-password").value;
       if (password.length < 10) {
         showAlert(status, "Your new password must contain at least 10 characters.", "error");
         return;
@@ -1106,6 +1118,201 @@
         showAlert(status, "Password changed. Keep it private.", "success");
       } catch (error) {
         showAlert(status, "Your password could not be changed. Check your connection and try again.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  function parseDelimitedLine(line, delimiter) {
+    var values = [];
+    var value = "";
+    var quoted = false;
+    for (var index = 0; index < line.length; index += 1) {
+      var character = line[index];
+      if (character === '"' && quoted && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else if (character === '"') {
+        quoted = !quoted;
+      } else if (character === delimiter && !quoted) {
+        values.push(value.trim());
+        value = "";
+      } else {
+        value += character;
+      }
+    }
+    if (quoted) throw new Error("A roster row contains an unmatched quotation mark.");
+    values.push(value.trim());
+    return values;
+  }
+
+  function parseStudentRoster(text) {
+    var lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(function (line) {
+      return line.trim() !== "";
+    });
+    if (lines.length < 2) throw new Error("Paste the header and at least one student row.");
+
+    var delimiter = lines[0].indexOf("\t") !== -1 ? "\t" : ",";
+    var headers = parseDelimitedLine(lines[0], delimiter).map(function (header) {
+      return header.toLowerCase().replace(/[^a-z0-9]/g, "");
+    });
+    var columnIndexes = {
+      school_code: headers.indexOf("schoolcode"),
+      full_name: headers.indexOf("name"),
+      index_number: headers.indexOf("cassrefid"),
+      learning_area: headers.indexOf("learningarea"),
+      year_of_entry: headers.indexOf("yearofentry")
+    };
+    if (Object.keys(columnIndexes).some(function (key) { return columnIndexes[key] < 0; })) {
+      throw new Error("Required columns are School Code, Name, CassRefID, LEARNING_AREA, and YearOfEntry.");
+    }
+
+    return lines.slice(1).map(function (line, index) {
+      var values = parseDelimitedLine(line, delimiter);
+      if (values.length !== headers.length) {
+        throw new Error("Roster row " + (index + 2) + " does not have the same number of columns as the header.");
+      }
+      var student = {};
+      Object.keys(columnIndexes).forEach(function (key) {
+        student[key] = values[columnIndexes[key]];
+      });
+      return student;
+    });
+  }
+
+  function csvCell(value) {
+    var text = String(value);
+    if (/^[=+\-@]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+
+  function downloadStudentCredentials(credentials, academicYear) {
+    var header = ["CassRefID", "Name", "Temporary password"];
+    var rows = credentials.map(function (credential) {
+      return [
+        csvCell(credential.index_number),
+        csvCell(credential.full_name),
+        csvCell(credential.temporary_password)
+      ].join(",");
+    });
+    var content = "\uFEFF" + [header.map(csvCell).join(",")].concat(rows).join("\r\n");
+    var blobUrl = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+    var link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "afastech-shs3-credentials-" + academicYear.replace(/[^0-9]/g, "-") + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 1000);
+  }
+
+  function initializeStudentImport(client) {
+    var form = document.getElementById("admin-student-import-form");
+    if (!form) return;
+    var status = document.getElementById("admin-student-import-status");
+    var rosterInput = document.getElementById("admin-student-import-data");
+    var fileInput = document.getElementById("admin-student-import-file");
+    var downloadButton = document.getElementById("admin-student-import-download");
+    var pendingCredentials = [];
+    var pendingYear = "";
+
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      if (file.size > 1024 * 1024) {
+        showAlert(status, "Roster file must be smaller than 1 MB.", "error");
+        fileInput.value = "";
+        return;
+      }
+      var reader = new FileReader();
+      reader.addEventListener("load", function () {
+        rosterInput.value = String(reader.result || "");
+        showAlert(status, "Roster loaded. Review it before creating accounts.", "success");
+      });
+      reader.addEventListener("error", function () {
+        showAlert(status, "Roster file could not be read. Try pasting its contents instead.", "error");
+      });
+      reader.readAsText(file);
+    });
+
+    downloadButton.addEventListener("click", function () {
+      if (!pendingCredentials.length) return;
+      downloadStudentCredentials(pendingCredentials, pendingYear);
+      pendingCredentials = [];
+      pendingYear = "";
+      downloadButton.hidden = true;
+      showAlert(status, "Credential file downloaded. Keep it private; the passwords cannot be retrieved from the portal again.", "success");
+    });
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (pendingCredentials.length) {
+        showAlert(status, "Download the previous credential file before starting another import.", "error");
+        return;
+      }
+      var academicYear = document.getElementById("admin-student-import-year").value;
+      var makeCurrent = document.getElementById("admin-student-import-current").checked;
+      var students;
+      try {
+        students = parseStudentRoster(rosterInput.value);
+      } catch (error) {
+        showAlert(status, error.message, "error");
+        return;
+      }
+      if (students.length > 500) {
+        showAlert(status, "Import no more than 500 students at a time.", "error");
+        return;
+      }
+      if (!academicYear) {
+        showAlert(status, "Choose an academic year before importing.", "error");
+        return;
+      }
+      var confirmed = window.confirm(
+        "Create " + students.length + " SHS 3 student accounts for " + academicYear +
+        " and generate a different temporary password for each student? The credentials will be downloadable only once."
+      );
+      if (!confirmed) return;
+
+      var button = form.querySelector("button[type='submit']");
+      button.disabled = true;
+      showAlert(status, "Creating student accounts and academic enrolments…", "success");
+      try {
+        var result = await client.functions.invoke("import-student-roster", {
+          body: {
+            academic_year: academicYear,
+            class_name: "SHS 3",
+            make_current: makeCurrent,
+            students: students
+          }
+        });
+        if (result.error || !result.data || !Array.isArray(result.data.credentials)) {
+          var functionMessage = result.data && result.data.error;
+          throw new Error(functionMessage || "Student roster import failed. No credentials were issued.");
+        }
+        pendingCredentials = result.data.credentials;
+        pendingYear = result.data.academic_year;
+        rosterInput.value = "";
+        fileInput.value = "";
+        downloadButton.hidden = false;
+        showAlert(
+          status,
+          result.data.imported + " students were registered and enrolled in " +
+            result.data.class_name + " for " + result.data.academic_year +
+            ". Download the one-time credential file now.",
+          "success"
+        );
+        try {
+          await loadAdminDashboard(client);
+        } catch (refreshError) {
+          showAlert(
+            status,
+            "Students were imported, but the dashboard could not refresh. Download the credentials, then reload the page.",
+            "error"
+          );
+        }
+      } catch (error) {
+        showAlert(status, error.message || "Student roster import failed. Check the roster and try again.", "error");
       } finally {
         button.disabled = false;
       }
@@ -1214,7 +1421,16 @@
     loginForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       var submitButton = loginForm.querySelector("button[type='submit']");
-      var email = loginForm.querySelector("#portalId").value.trim().toLowerCase();
+      var identifier = loginForm.querySelector("#portalId").value.trim();
+      var email = identifier.toLowerCase();
+      if (portalType === "student" && identifier.indexOf("@") === -1) {
+        var normalizedIndex = identifier.toUpperCase();
+        if (!/^[A-Z0-9]{12}$/.test(normalizedIndex)) {
+          showAlert(alertBox, "Enter a valid CassRefID or school email address.", "error");
+          return;
+        }
+        email = "refid-" + normalizedIndex.toLowerCase() + "@" + STUDENT_LOGIN_DOMAIN;
+      }
       var password = loginForm.querySelector("#portalPass").value;
       submitButton.disabled = true;
       showAlert(alertBox, "Signing in…", "success");
@@ -1290,14 +1506,16 @@
       if (requiredRole === "student") {
         await loadStudentDashboard(client, session.user.id);
         watchStudentFeeChanges(client, session.user.id);
+        initializePasswordChange(client, "student-password-form", "student-password-status");
       }
       else if (requiredRole === "staff") {
         await loadStaffDashboard(client, session.user.id);
-        initializeStaffPasswordChange(client);
+        initializePasswordChange(client, "staff-password-form", "staff-password-status");
       }
       else {
         await loadAdminDashboard(client);
         initializeStaffInvite(client);
+        initializeStudentImport(client);
       }
     } catch (error) {
       showAlert(alertBox, "Portal data could not be loaded. Please refresh or contact the site administrator.", "error");

@@ -51,6 +51,32 @@
           <div class="card"><h4>Portal accounts</h4><p data-admin-total>0</p></div>
           <div class="card"><h4>Staff accounts</h4><p data-admin-staff-count>0</p></div>
         </div>
+        <section id="student-import" class="card" style="margin-bottom:2.5rem;">
+          <h2>Register the SHS 3 student cohort</h2>
+          <p>Paste or select the roster export with columns <strong>School Code, Name, CassRefID, LEARNING_AREA, YearOfEntry</strong>. Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
+          <form id="admin-student-import-form">
+            <div class="field">
+              <label for="admin-student-import-year">Academic year</label>
+              <select id="admin-student-import-year" required>
+                <option value="">Loading academic years…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="admin-student-import-data">Student roster (CSV or tab-separated)</label>
+              <input type="file" id="admin-student-import-file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+              <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="School Code&#9;Name&#9;CassRefID&#9;LEARNING_AREA&#9;YearOfEntry"></textarea>
+            </div>
+            <div class="field">
+              <label for="admin-student-import-current">
+                <input type="checkbox" id="admin-student-import-current" checked>
+                Make this the current academic year
+              </label>
+            </div>
+            <button class="btn btn-primary" type="submit">Create SHS 3 student accounts</button>
+          </form>
+          <p id="admin-student-import-status" class="alert" role="status" style="margin-top:1rem;"></p>
+          <button id="admin-student-import-download" class="btn btn-outline" type="button" hidden>Download one-time student credentials</button>
+        </section>
         <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
           <h2>Add a staff member or teacher</h2>
           <p>Create the account directly in Supabase. The temporary password is not emailed. Share it with the staff member through a private channel and ask them to change it after their first sign-in.</p>

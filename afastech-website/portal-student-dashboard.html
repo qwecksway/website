@@ -30,6 +30,7 @@
       <a href="#results"><span>06</span> Results</a>
       <a href="#fees"><span>07</span> Fees</a>
       <a href="#notices"><span>08</span> Announcements</a>
+      <a href="#account-security"><span>09</span> Account security</a>
     </nav>
     <div class="student-sidebar-footer">
       <a href="index.html">Visit school website</a>
@@ -69,13 +70,32 @@
           </div>
           <dl class="student-personal-grid">
             <div><dt>Full name</dt><dd data-student-full-name>Not set</dd></div>
-            <div><dt>School email</dt><dd data-student-email>Not set</dd></div>
+            <div><dt>Sign-in ID / email</dt><dd data-student-email>Not set</dd></div>
             <div><dt>Index number</dt><dd data-student-personal-index>Not set</dd></div>
             <div><dt>Class</dt><dd data-student-personal-class>Not set</dd></div>
             <div><dt>Programme</dt><dd data-student-personal-programme>Not set</dd></div>
             <div><dt>Residency</dt><dd data-student-personal-residency>Not set</dd></div>
           </dl>
           <p class="student-personal-note">If any of these details are incorrect, contact the school office to update your official record.</p>
+        </section>
+
+        <section id="account-security" class="student-panel student-personal-panel">
+          <div class="student-panel-heading">
+            <div><p class="student-eyebrow">ACCOUNT SECURITY</p><h2>Change your password</h2></div>
+          </div>
+          <p>Choose a private password of at least 10 characters. You can change it whenever you are signed in.</p>
+          <form id="student-password-form">
+            <div class="field">
+              <label for="student-new-password">New password</label>
+              <input type="password" id="student-new-password" autocomplete="new-password" minlength="10" required>
+            </div>
+            <div class="field">
+              <label for="student-confirm-password">Confirm new password</label>
+              <input type="password" id="student-confirm-password" autocomplete="new-password" minlength="10" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Update password</button>
+          </form>
+          <p id="student-password-status" class="alert" role="status" style="margin-top:1rem;"></p>
         </section>
 
         <section id="academics" class="student-summary-grid" aria-label="Academic overview">
