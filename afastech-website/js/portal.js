@@ -11,6 +11,8 @@
     staff: "portal-staff-dashboard.html",
     admin: "portal-admin-dashboard.html"
   };
+  var staffAcademicAssignments = [];
+  var staffAcademicAssessments = [];
 
   function createClient() {
     if (!window.supabase || !window.AFASTECH_SUPABASE_URL || !window.AFASTECH_SUPABASE_ANON_KEY) {
@@ -59,6 +61,25 @@
     if (element) element.textContent = message;
   }
 
+  function setSelectOptions(select, items, placeholder, valueKey, labelBuilder) {
+    if (!select) return;
+    var previousValue = select.value;
+    select.replaceChildren();
+    var empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = placeholder;
+    select.appendChild(empty);
+    (items || []).forEach(function (item) {
+      var option = document.createElement("option");
+      option.value = item[valueKey];
+      option.textContent = labelBuilder(item);
+      select.appendChild(option);
+    });
+    if ((items || []).some(function (item) { return String(item[valueKey]) === previousValue; })) {
+      select.value = previousValue;
+    }
+  }
+
   async function getProfile(client, userId) {
     var result = await client
       .from("profiles")
@@ -71,26 +92,49 @@
 
   function setProfileName(profile, email) {
     var greeting = document.querySelector("[data-portal-user]");
-    if (greeting) greeting.textContent = profile.full_name || email || "User";
+    var fullName = profile.full_name || "";
+    if (greeting) greeting.textContent = fullName || email || "User";
+    var firstName = document.querySelector("[data-student-first-name]");
+    if (firstName) firstName.textContent = fullName ? fullName.split(/\s+/)[0] : "Student";
+    var studentName = document.querySelector("[data-student-full-name]");
+    if (studentName) studentName.textContent = fullName || "Not set";
+    var studentEmail = document.querySelector("[data-student-email]");
+    if (studentEmail) studentEmail.textContent = email || "Not set";
   }
 
   async function loadStudentDashboard(client, userId) {
     var results = await Promise.all([
-      client.from("student_details").select("programme, residency, current_term, fees_status").eq("profile_id", userId).maybeSingle(),
+      client.from("student_details").select("index_number, programme, residency, form_class, current_term, fees_status").eq("profile_id", userId).maybeSingle(),
       client.from("timetable_entries").select("weekday, morning, afternoon").eq("student_id", userId).order("weekday"),
-      client.from("student_results").select("subject, assessment, score").eq("student_id", userId).order("created_at", { ascending: false }).limit(10),
-      client.from("portal_announcements").select("title, body, published_at").or("audience.eq.all,audience.eq.student").order("published_at", { ascending: false }).limit(10)
+      client.rpc("student_list_my_academic_results"),
+      client.from("portal_announcements").select("title, body, published_at").or("audience.eq.all,audience.eq.student").order("published_at", { ascending: false }).limit(10),
+      client.rpc("student_list_my_academic_subjects")
     ]);
     var error = results.find(function (result) { return result.error; });
     if (error) throw error.error;
 
     var record = results[0].data;
+    document.querySelector("[data-student-programme]").textContent = "Not set";
+    document.querySelector("[data-student-residency]").textContent = "Not set";
+    document.querySelector("[data-student-term]").textContent = "Not set";
+    document.querySelector("[data-student-index]").textContent = "Not set";
+    document.querySelector("[data-student-form-class]").textContent = "Not set";
+    document.querySelector("[data-student-fees]").textContent = "Not set";
+    document.querySelector("[data-student-personal-index]").textContent = "Not set";
+    document.querySelector("[data-student-personal-class]").textContent = "Not set";
+    document.querySelector("[data-student-personal-programme]").textContent = "Not set";
+    document.querySelector("[data-student-personal-residency]").textContent = "Not set";
     if (record) {
       document.querySelector("[data-student-programme]").textContent = record.programme || "Not set";
       document.querySelector("[data-student-residency]").textContent = record.residency || "Not set";
       document.querySelector("[data-student-term]").textContent = record.current_term || "Not set";
-      var fees = document.querySelector("[data-student-fees]");
-      if (fees) fees.textContent = record.fees_status || "Not set";
+      document.querySelector("[data-student-index]").textContent = record.index_number || "Not set";
+      document.querySelector("[data-student-form-class]").textContent = record.form_class || "Not set";
+      document.querySelector("[data-student-fees]").textContent = record.fees_status || "Not set";
+      document.querySelector("[data-student-personal-index]").textContent = record.index_number || "Not set";
+      document.querySelector("[data-student-personal-class]").textContent = record.form_class || "Not set";
+      document.querySelector("[data-student-personal-programme]").textContent = record.programme || "Not set";
+      document.querySelector("[data-student-personal-residency]").textContent = record.residency || "Not set";
     }
 
     var weekdays = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -102,38 +146,247 @@
     renderRows(document.getElementById("student-results"), results[2].data || [], [
       function (row) { return row.subject; },
       function (row) { return row.assessment; },
-      function (row) { return Number(row.score).toFixed(2).replace(/\.00$/, "") + "%"; }
+      function (row) { return [row.term, row.academic_year].filter(Boolean).join(" · ") || "—"; },
+      function (row) {
+        var score = Number(row.score);
+        var maximum = Number(row.max_score);
+        return score.toFixed(2).replace(/\.00$/, "") + " / " + maximum.toFixed(2).replace(/\.00$/, "");
+      }
+    ]);
+    renderRows(document.getElementById("student-subjects"), results[4].data || [], [
+      function (row) { return row.subject_name; },
+      function (row) { return row.teacher_name || "Not assigned"; },
+      function (row) { return [row.class_name, row.programme_name].filter(Boolean).join(" · "); },
+      function (row) { return row.academic_year_name; }
     ]);
     renderAnnouncements(results[3].data || []);
     if (!record) showEmptyState(document.getElementById("student-data-status"), "Your school record has not been added yet.");
     if (!results[1].data.length) showEmptyState(document.getElementById("student-timetable-status"), "No timetable entries are available.");
     if (!results[2].data.length) showEmptyState(document.getElementById("student-results-status"), "No results are available.");
+    if (!results[4].data.length) showEmptyState(document.getElementById("student-subjects-status"), "Your current class and subject enrolment has not been set up yet.");
   }
 
   async function loadStaffDashboard(client, userId) {
-    var results = await Promise.all([
-      client.from("staff_assignments").select("weekday, class_name, subject").eq("staff_id", userId).order("weekday"),
-      client.from("staff_gradebook_entries").select("class_name, assessment, status").eq("staff_id", userId).order("status"),
-      client.from("portal_announcements").select("title, body, published_at").or("audience.eq.all,audience.eq.staff").order("published_at", { ascending: false }).limit(10)
-    ]);
-    var error = results.find(function (result) { return result.error; });
-    if (error) throw error.error;
+    var result = await client.from("portal_announcements")
+      .select("title, body, published_at")
+      .or("audience.eq.all,audience.eq.staff")
+      .order("published_at", { ascending: false })
+      .limit(10);
+    if (result.error) throw result.error;
+    renderAnnouncements(result.data || []);
+    var houseFeeAccess = await client.rpc("staff_can_manage_house_fees");
+    if (houseFeeAccess.error) throw houseFeeAccess.error;
+    var houseFeesSection = document.getElementById("house-fees");
+    houseFeesSection.hidden = !houseFeeAccess.data;
+    if (houseFeeAccess.data) {
+      await loadFeeRecords(client, "staff-house-fees", "staff-house-fees-status");
+    }
+    await initializeStaffAcademicTools(client);
+  }
 
-    var weekdays = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    renderRows(document.getElementById("staff-assignments"), results[0].data || [], [
-      function (row) { return weekdays[row.weekday] || ""; },
-      function (row) { return row.class_name; },
-      function (row) { return row.subject; }
+  async function initializeStaffAcademicTools(client) {
+    var assignmentSelect = document.getElementById("staff-academic-assignment");
+    var assessmentSelect = document.getElementById("staff-academic-assessment");
+    var createForm = document.getElementById("staff-academic-assessment-form");
+    var loadRosterButton = document.getElementById("staff-academic-load-roster");
+    var submitButton = document.getElementById("staff-academic-submit");
+    if (!assignmentSelect || !assessmentSelect || !createForm || !loadRosterButton || !submitButton) return;
+
+    var assignmentResult = await client.rpc("staff_list_academic_assignments");
+    var assessmentResult = await client.rpc("staff_list_academic_assessments");
+    if (assignmentResult.error) throw assignmentResult.error;
+    if (assessmentResult.error) throw assessmentResult.error;
+    staffAcademicAssignments = assignmentResult.data || [];
+    staffAcademicAssessments = assessmentResult.data || [];
+    renderRows(document.getElementById("staff-assignments"), staffAcademicAssignments, [
+      function (item) { return item.class_name; },
+      function (item) { return item.programme_name; },
+      function (item) { return item.subject_name; },
+      function (item) { return item.academic_year_name; }
     ]);
-    renderRows(document.getElementById("staff-gradebook"), results[1].data || [], [
-      function (row) { return row.class_name; },
-      function (row) { return row.assessment; },
-      function (row) { return row.status; }
-    ]);
-    renderAnnouncements(results[2].data || []);
-    if (!results[0].data.length) showEmptyState(document.getElementById("staff-assignments-status"), "No class assignments are available.");
-    if (!results[1].data.length) showEmptyState(document.getElementById("staff-gradebook-status"), "No gradebook entries are available.");
-    await loadFeeRecords(client, "staff-house-fees", "staff-house-fees-status");
+    setSelectOptions(assignmentSelect, staffAcademicAssignments, "Choose an assigned class", "class_subject_id", function (item) {
+      return item.class_name + " — " + item.subject_name + " (" + item.academic_year_name + ")";
+    });
+    if (!assignmentSelect.value && staffAcademicAssignments.length) {
+      assignmentSelect.value = staffAcademicAssignments[0].class_subject_id;
+    }
+    renderStaffAcademicAssessments(assessmentSelect, staffAcademicAssessments);
+    if (!staffAcademicAssignments.length) {
+      showEmptyState(document.getElementById("staff-academic-roster-status"), "No academic classes have been assigned to your account.");
+      showEmptyState(document.getElementById("staff-assignments-status"), "No class and subject allocations are set up yet.");
+    } else {
+      showEmptyState(document.getElementById("staff-assignments-status"), "");
+    }
+
+    if (!createForm.dataset.academicBound) {
+      createForm.dataset.academicBound = "true";
+      assignmentSelect.addEventListener("change", async function () {
+        var assignment = staffAcademicAssignments.find(function (item) {
+          return item.class_subject_id === assignmentSelect.value;
+        });
+        var terms = document.getElementById("staff-academic-term");
+        setSelectOptions(terms, [], assignment ? "Loading semesters…" : "Choose an assigned class", "id", function (item) {
+          return item.name;
+        });
+        if (!assignment) return;
+        try {
+          var termResult = await client.rpc("staff_list_academic_terms", {
+            target_year_id: assignment.academic_year_id
+          });
+          if (termResult.error) throw termResult.error;
+          if (assignmentSelect.value !== assignment.class_subject_id) return;
+          setSelectOptions(terms, termResult.data || [], "Choose a semester", "id", function (item) {
+            return item.name;
+          });
+        } catch (error) {
+          showAlert(document.getElementById("staff-academic-status"), "Terms could not be loaded. Refresh and try again.", "error");
+        }
+      });
+      createForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = createForm.querySelector("button[type='submit']");
+        button.disabled = true;
+        var saved;
+        try {
+          saved = await client.rpc("staff_save_academic_assessment", {
+            target_class_subject_id: assignmentSelect.value,
+            target_term_id: document.getElementById("staff-academic-term").value,
+            target_title: document.getElementById("staff-academic-assessment-title").value,
+            target_max_score: Number(document.getElementById("staff-academic-assessment-max").value)
+          });
+          if (saved.error) throw saved.error;
+        } catch (error) {
+          showAlert(document.getElementById("staff-academic-status"), "Assessment could not be created. Check the class, term, and mark range.", "error");
+          button.disabled = false;
+          return;
+        }
+        document.getElementById("staff-academic-assessment-title").value = "";
+        showAlert(document.getElementById("staff-academic-status"), "Assessment created. Enter marks for the whole class.", "success");
+        try {
+          await initializeStaffAcademicTools(client);
+          assessmentSelect.value = saved.data;
+        } catch (error) {
+          showAlert(document.getElementById("staff-academic-status"), "Assessment was created, but the list could not be refreshed. Reload the page.", "error");
+        }
+        button.disabled = false;
+      });
+      loadRosterButton.addEventListener("click", function () {
+        loadStaffAcademicRoster(client, staffAcademicAssessments, staffAcademicAssignments, assignmentSelect, assessmentSelect, submitButton);
+      });
+      submitButton.addEventListener("click", async function () {
+        submitButton.disabled = true;
+        var submitted;
+        try {
+          submitted = await client.rpc("staff_submit_academic_assessment", {
+            target_assessment_id: assessmentSelect.value
+          });
+          if (submitted.error) throw submitted.error;
+        } catch (error) {
+          showAlert(document.getElementById("staff-academic-status"), "Marks could not be submitted. Enter every student's mark before submitting.", "error");
+          submitButton.disabled = false;
+          return;
+        }
+        showAlert(document.getElementById("staff-academic-status"), "Marks submitted to the administrator for review.", "success");
+        document.getElementById("staff-academic-roster").replaceChildren();
+        showEmptyState(document.getElementById("staff-academic-roster-status"), "Submitted marks are locked until the administrator reviews them.");
+        try {
+          await initializeStaffAcademicTools(client);
+        } catch (error) {
+          showAlert(document.getElementById("staff-academic-status"), "Marks were submitted, but the list could not be refreshed. Reload the page.", "error");
+        }
+      });
+    }
+
+    if (assignmentSelect.value) assignmentSelect.dispatchEvent(new Event("change"));
+  }
+
+  function renderStaffAcademicAssessments(select, assessments) {
+    setSelectOptions(select, assessments, "Choose an assessment", "id", function (item) {
+      return item.class_name + " — " + item.subject_name + " · " + item.title + " (" + item.status + ")";
+    });
+  }
+
+  async function loadStaffAcademicRoster(client, assessments, assignments, assignmentSelect, assessmentSelect, submitButton) {
+    var assessment = assessments.find(function (item) { return item.id === assessmentSelect.value; });
+    if (!assessment) {
+      showEmptyState(document.getElementById("staff-academic-roster-status"), "Choose an assessment first.");
+      return;
+    }
+    var tbody = document.getElementById("staff-academic-roster");
+    tbody.replaceChildren();
+    submitButton.disabled = assessment.status !== "draft";
+    var roster;
+    try {
+      roster = await client.rpc("staff_list_academic_students", {
+        target_class_subject_id: assessment.class_subject_id,
+        target_assessment_id: assessment.id
+      });
+      if (roster.error) throw roster.error;
+    } catch (error) {
+      showEmptyState(document.getElementById("staff-academic-roster-status"), "The student list could not be loaded. Refresh and try again.");
+      return;
+    }
+    var students = roster.data || [];
+    if (!students.length) {
+      showEmptyState(document.getElementById("staff-academic-roster-status"), "No students are enrolled in this class for the selected year.");
+      submitButton.disabled = true;
+      return;
+    }
+    students.forEach(function (student) {
+      var row = document.createElement("tr");
+      var name = document.createElement("td");
+      var index = document.createElement("td");
+      var scoreCell = document.createElement("td");
+      var actionCell = document.createElement("td");
+      var score = document.createElement("input");
+      var save = document.createElement("button");
+      name.textContent = student.full_name || "Name not provided";
+      index.textContent = student.index_number || "Not set";
+      score.type = "number";
+      score.min = "0";
+      score.max = String(assessment.max_score);
+      score.step = "0.01";
+      score.required = true;
+      score.value = student.score === null ? "" : String(student.score);
+      score.disabled = assessment.status !== "draft";
+      score.setAttribute("aria-label", "Mark for " + (student.full_name || "student"));
+      save.className = "btn btn-outline";
+      save.type = "button";
+      save.textContent = "Save mark";
+      save.disabled = assessment.status !== "draft";
+      save.addEventListener("click", async function () {
+        if (!score.value.trim()) {
+          showAlert(document.getElementById("staff-academic-status"), "Enter a mark before saving.", "error");
+          score.focus();
+          return;
+        }
+        save.disabled = true;
+        try {
+          var saved = await client.rpc("staff_save_academic_result", {
+            target_assessment_id: assessment.id,
+            target_student_id: student.student_id,
+            target_score: Number(score.value)
+          });
+          if (saved.error) throw saved.error;
+          student.score = Number(score.value);
+          showAlert(document.getElementById("staff-academic-status"), "Mark saved. It remains private until submitted and published.", "success");
+        } catch (error) {
+          save.disabled = false;
+          showAlert(document.getElementById("staff-academic-status"), "Mark not saved. Enter a valid mark within the assessment maximum.", "error");
+          return;
+        }
+        save.disabled = false;
+      });
+      scoreCell.appendChild(score);
+      actionCell.appendChild(save);
+      row.append(name, index, scoreCell, actionCell);
+      tbody.appendChild(row);
+    });
+    showEmptyState(
+      document.getElementById("staff-academic-roster-status"),
+      assessment.status === "draft" ? "Save a mark for each student, then submit the assessment for review." : "This assessment has been submitted and is locked for editing."
+    );
+    submitButton.disabled = assessment.status !== "draft";
   }
 
   async function loadFeeRecords(client, tbodyId, statusId) {
@@ -216,7 +469,9 @@
     var results = await Promise.all([
       client.rpc("admin_list_profiles"),
       client.rpc("admin_list_houses"),
-      client.rpc("list_house_fee_records")
+      client.rpc("list_house_fee_records"),
+      client.rpc("admin_list_house_assignable_people"),
+      client.rpc("admin_list_staff_details")
     ]);
     var error = results.find(function (result) { return result.error; });
     if (error) throw error.error;
@@ -228,7 +483,8 @@
       profiles.filter(function (profile) { return profile.role === "staff"; }).length
     );
     renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client);
-    renderAdminHouseControls(client, profiles, houses);
+    renderAdminHouseControls(client, results[3].data || [], houses);
+    renderAdminStaffDetails(client, results[4].data || []);
 
     var tbody = document.getElementById("admin-profiles");
     tbody.replaceChildren();
@@ -308,6 +564,295 @@
       emptyRow.appendChild(emptyCell);
       tbody.appendChild(emptyRow);
     }
+    await loadAdminAcademicData(client);
+  }
+
+  function renderAdminStaffDetails(client, staff) {
+    var tbody = document.getElementById("admin-staff-details");
+    tbody.replaceChildren();
+    if (!staff.length) {
+      appendMessageRow(tbody, 4, "No staff accounts are available.");
+      return;
+    }
+    var titles = [
+      "Teacher", "House Master", "House Mistress", "Head of Department",
+      "Assistant Head", "Headteacher", "Non-Teaching Staff"
+    ];
+    var departments = [
+      "MATHS/ICT", "SCIENCE", "ENGLISH", "BUSINESS", "TECHNICAL", "HOME ECONOMICS"
+    ];
+    staff.forEach(function (member) {
+      var row = document.createElement("tr");
+      var identity = document.createElement("td");
+      var titleCell = document.createElement("td");
+      var departmentCell = document.createElement("td");
+      var actionCell = document.createElement("td");
+      var titleSelect = document.createElement("select");
+      var departmentSelect = document.createElement("select");
+      var save = document.createElement("button");
+      identity.textContent = (member.full_name || "Staff member") + " — " + member.email;
+
+      var titlePlaceholder = document.createElement("option");
+      titlePlaceholder.value = "";
+      titlePlaceholder.textContent = "Choose job title";
+      titleSelect.appendChild(titlePlaceholder);
+      titles.forEach(function (title) {
+        var option = document.createElement("option");
+        option.value = title;
+        option.textContent = title;
+        titleSelect.appendChild(option);
+      });
+      titleSelect.value = member.job_title || "";
+
+      var departmentPlaceholder = document.createElement("option");
+      departmentPlaceholder.value = "";
+      departmentPlaceholder.textContent = "No department";
+      departmentSelect.appendChild(departmentPlaceholder);
+      departments.forEach(function (department) {
+        var option = document.createElement("option");
+        option.value = department;
+        option.textContent = department;
+        departmentSelect.appendChild(option);
+      });
+      departmentSelect.value = member.department || "";
+      save.className = "btn btn-outline";
+      save.type = "button";
+      save.textContent = "Save";
+      save.addEventListener("click", async function () {
+        save.disabled = true;
+        try {
+          var update = await client.rpc("admin_update_staff_details", {
+            target_staff_id: member.id,
+            target_position: titleSelect.value,
+            target_department: departmentSelect.value
+          });
+          if (update.error) throw update.error;
+          showAlert(document.getElementById("portal-data-alert"), "Staff job details updated.", "success");
+          await loadAdminDashboard(client);
+        } catch (error) {
+          save.disabled = false;
+          showAlert(document.getElementById("portal-data-alert"), "Staff details could not be updated. Choose a valid job title and try again.", "error");
+        }
+      });
+      titleCell.appendChild(titleSelect);
+      departmentCell.appendChild(departmentSelect);
+      actionCell.appendChild(save);
+      row.append(identity, titleCell, departmentCell, actionCell);
+      tbody.appendChild(row);
+    });
+  }
+
+  function bindAdminAcademicForm(client, formId, rpcName, argsFactory) {
+    var form = document.getElementById(formId);
+    if (!form || form.dataset.academicBound) return;
+    form.dataset.academicBound = "true";
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var button = form.querySelector("button[type='submit']");
+      button.disabled = true;
+      try {
+        var result = await client.rpc(rpcName, argsFactory(form));
+        if (result.error) throw result.error;
+        form.reset();
+        showAlert(document.getElementById("admin-academic-status"), "Academic information saved.", "success");
+      } catch (error) {
+        showAlert(
+          document.getElementById("admin-academic-status"),
+          "Academic information could not be saved. Check the values and your access, then try again.",
+          "error"
+        );
+        button.disabled = false;
+        return;
+      }
+      try {
+        await loadAdminAcademicData(client);
+      } catch (error) {
+        showAlert(document.getElementById("admin-academic-status"), "Academic information was saved, but the lists could not be refreshed. Reload the page.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  async function loadAdminAcademicData(client) {
+    var result = await client.rpc("admin_list_academic_data");
+    if (result.error) throw result.error;
+    var data = result.data || {};
+    var years = data.years || [];
+    var programmes = data.programmes || [];
+    var classes = data.classes || [];
+    var departments = data.departments || [];
+    var subjects = data.subjects || [];
+    var students = data.students || [];
+    var staff = data.staff || [];
+
+    setSelectOptions(document.getElementById("admin-academic-term-year"), years, "Choose a year", "id", function (item) {
+      return item.name + (item.is_current ? " (current)" : "");
+    });
+    setSelectOptions(document.getElementById("admin-academic-enrol-year"), years, "Choose a year", "id", function (item) {
+      return item.name + (item.is_current ? " (current)" : "");
+    });
+    setSelectOptions(document.getElementById("admin-academic-class-programme"), programmes, "Choose a programme", "id", function (item) {
+      return item.name;
+    });
+    setSelectOptions(document.getElementById("admin-academic-enrol-class"), classes, "Choose a class", "id", function (item) {
+      return item.name + " — " + item.programme;
+    });
+    setSelectOptions(document.getElementById("admin-academic-allocation-class"), classes, "Choose a class", "id", function (item) {
+      return item.name + " — " + item.programme;
+    });
+    setSelectOptions(document.getElementById("admin-academic-allocation-subject"), subjects, "Choose a subject", "id", function (item) {
+      return (item.code ? item.name + " (" + item.code + ")" : item.name) +
+        (item.department ? " — " + item.department : "");
+    });
+    setSelectOptions(document.getElementById("admin-academic-subject-department"), departments, "No department", "id", function (item) {
+      return item.name;
+    });
+    setSelectOptions(document.getElementById("admin-academic-allocation-year"), years, "Choose a year", "id", function (item) {
+      return item.name + (item.is_current ? " (current)" : "");
+    });
+    setSelectOptions(document.getElementById("admin-academic-student"), students, "Choose a student", "id", function (item) {
+      return item.index_number ? item.full_name + " — " + item.index_number : item.full_name || "Student";
+    });
+    setSelectOptions(document.getElementById("admin-academic-allocation-teacher"), staff, "Unassigned", "id", function (item) {
+      return item.full_name || "Staff member";
+    });
+
+    var structure = document.getElementById("admin-academic-structure");
+    structure.replaceChildren();
+    if (!(data.allocations || []).length) {
+      appendMessageRow(structure, 4, "No class, subject, and teacher allocations are set up yet.");
+    } else {
+      data.allocations.forEach(function (item) {
+        appendTableRow(structure, [
+          item.year_name,
+          item.programme + " — " + item.class_name,
+          item.subject_name,
+          item.teacher_name || "Unassigned"
+        ]);
+      });
+    }
+
+    renderAdminAcademicAssessments(client, data.assessments || []);
+    bindAdminAcademicForm(client, "admin-academic-year-form", "admin_save_academic_year", function () {
+      return {
+        target_name: document.getElementById("admin-academic-year-name").value,
+        target_starts_on: document.getElementById("admin-academic-year-start").value,
+        target_ends_on: document.getElementById("admin-academic-year-end").value,
+        target_is_current: document.getElementById("admin-academic-year-current").checked
+      };
+    });
+    bindAdminAcademicForm(client, "admin-academic-term-form", "admin_save_academic_term", function () {
+      return {
+        target_year_id: document.getElementById("admin-academic-term-year").value,
+        target_name: document.getElementById("admin-academic-term-name").value,
+        target_sequence_no: Number(document.getElementById("admin-academic-term-sequence").value),
+        target_starts_on: document.getElementById("admin-academic-term-start").value,
+        target_ends_on: document.getElementById("admin-academic-term-end").value,
+        target_is_current: document.getElementById("admin-academic-term-current").checked
+      };
+    });
+    bindAdminAcademicForm(client, "admin-academic-programme-form", "admin_save_academic_programme", function () {
+      return { target_name: document.getElementById("admin-academic-programme-name").value };
+    });
+    bindAdminAcademicForm(client, "admin-academic-class-form", "admin_save_academic_class", function () {
+      return {
+        target_name: document.getElementById("admin-academic-class-name").value,
+        target_programme_id: document.getElementById("admin-academic-class-programme").value
+      };
+    });
+    bindAdminAcademicForm(client, "admin-academic-subject-form", "admin_save_academic_subject", function () {
+      return {
+        target_name: document.getElementById("admin-academic-subject-name").value,
+        target_code: document.getElementById("admin-academic-subject-code").value,
+        target_department_id: document.getElementById("admin-academic-subject-department").value || null
+      };
+    });
+    bindAdminAcademicForm(client, "admin-academic-department-form", "admin_save_academic_department", function () {
+      return { target_name: document.getElementById("admin-academic-department-name").value };
+    });
+    bindAdminAcademicForm(client, "admin-academic-enrolment-form", "admin_assign_student_class", function () {
+      return {
+        target_student_id: document.getElementById("admin-academic-student").value,
+        target_class_id: document.getElementById("admin-academic-enrol-class").value,
+        target_year_id: document.getElementById("admin-academic-enrol-year").value
+      };
+    });
+    bindAdminAcademicForm(client, "admin-academic-allocation-form", "admin_assign_class_subject", function () {
+      return {
+        target_class_id: document.getElementById("admin-academic-allocation-class").value,
+        target_subject_id: document.getElementById("admin-academic-allocation-subject").value,
+        target_year_id: document.getElementById("admin-academic-allocation-year").value,
+        target_teacher_id: document.getElementById("admin-academic-allocation-teacher").value || null
+      };
+    });
+  }
+
+  function renderAdminAcademicAssessments(client, assessments) {
+    var tbody = document.getElementById("admin-academic-assessments");
+    tbody.replaceChildren();
+    if (!assessments.length) {
+      appendMessageRow(tbody, 5, "No assessments have been submitted for review.");
+      return;
+    }
+    assessments.forEach(function (assessment) {
+      var row = document.createElement("tr");
+      [assessment.year_name + " · " + assessment.term_name, assessment.class_name,
+        assessment.subject_name, assessment.title].forEach(function (value) {
+        var cell = document.createElement("td");
+        cell.textContent = value || "—";
+        row.appendChild(cell);
+      });
+      var actionCell = document.createElement("td");
+      actionCell.textContent = assessment.status;
+      if (assessment.status === "submitted") {
+        var button = document.createElement("button");
+        button.className = "btn btn-primary";
+        button.type = "button";
+        button.textContent = "Publish results";
+        button.addEventListener("click", async function () {
+          button.disabled = true;
+          try {
+            var publish = await client.rpc("admin_publish_academic_assessment", {
+              target_assessment_id: assessment.id
+            });
+            if (publish.error) throw publish.error;
+          } catch (error) {
+            button.disabled = false;
+            showAlert(document.getElementById("admin-academic-status"), "Results could not be published. Refresh and try again.", "error");
+            return;
+          }
+          showAlert(document.getElementById("admin-academic-status"), "Results published to enrolled students.", "success");
+          try {
+            await loadAdminAcademicData(client);
+          } catch (error) {
+            showAlert(document.getElementById("admin-academic-status"), "Results were published, but the assessment list could not be refreshed.", "error");
+          }
+        });
+        actionCell.replaceChildren(button);
+      }
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
+  }
+
+  function appendTableRow(tbody, values) {
+    var row = document.createElement("tr");
+    values.forEach(function (value) {
+      var cell = document.createElement("td");
+      cell.textContent = value || "—";
+      row.appendChild(cell);
+    });
+    tbody.appendChild(row);
+  }
+
+  function appendMessageRow(tbody, columnCount, message) {
+    var row = document.createElement("tr");
+    var cell = document.createElement("td");
+    cell.colSpan = columnCount;
+    cell.textContent = message;
+    row.appendChild(cell);
+    tbody.appendChild(row);
   }
 
   function renderFeeRecordsFromData(records, tbodyId, client) {
@@ -370,7 +915,7 @@
     });
   }
 
-  function renderAdminHouseControls(client, profiles, houses) {
+  function renderAdminHouseControls(client, assignablePeople, houses) {
     var personSelect = document.getElementById("admin-house-person");
     var houseSelect = document.getElementById("admin-house-select");
     personSelect.replaceChildren();
@@ -378,16 +923,14 @@
 
     var personPlaceholder = document.createElement("option");
     personPlaceholder.value = "";
-    personPlaceholder.textContent = "Choose a student or staff member";
+    personPlaceholder.textContent = "Choose a student or House Master";
     personPlaceholder.disabled = true;
     personPlaceholder.selected = true;
     personSelect.appendChild(personPlaceholder);
-    profiles.filter(function (profile) {
-      return profile.role === "student" || profile.role === "staff";
-    }).forEach(function (profile) {
+    assignablePeople.forEach(function (profile) {
       var option = document.createElement("option");
       option.value = profile.id;
-      option.textContent = (profile.role === "staff" ? "House Master — " : "Student — ") +
+      option.textContent = (profile.role === "staff" ? profile.job_title + " — " : "Student — ") +
         (profile.full_name || profile.email || profile.id);
       personSelect.appendChild(option);
     });
@@ -436,6 +979,8 @@
     });
 
     var assignmentForm = document.getElementById("admin-house-assignment-form");
+    if (assignmentForm.dataset.handlerBound) return;
+    assignmentForm.dataset.handlerBound = "true";
     assignmentForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       var button = assignmentForm.querySelector("button[type='submit']");
@@ -582,6 +1127,37 @@
       });
   }
 
+  function initializeStudentNavigation() {
+    var layout = document.querySelector(".student-portal-layout");
+    var toggle = document.querySelector(".student-sidebar-toggle");
+    var backdrop = document.querySelector(".student-sidebar-backdrop");
+    if (!layout || !toggle || !backdrop) return;
+
+    function closeMenu() {
+      layout.classList.remove("is-sidebar-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open student portal menu");
+    }
+
+    toggle.addEventListener("click", function () {
+      var isOpen = layout.classList.toggle("is-sidebar-open");
+      toggle.setAttribute("aria-expanded", String(isOpen));
+      toggle.setAttribute("aria-label", isOpen ? "Close student portal menu" : "Open student portal menu");
+    });
+    backdrop.addEventListener("click", closeMenu);
+    layout.querySelectorAll(".student-portal-nav a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        layout.querySelectorAll(".student-portal-nav a").forEach(function (item) {
+          item.classList.remove("is-current");
+          item.removeAttribute("aria-current");
+        });
+        link.classList.add("is-current");
+        link.setAttribute("aria-current", "page");
+        closeMenu();
+      });
+    });
+  }
+
   function renderAnnouncements(announcements) {
     var list = document.getElementById("portal-announcements");
     if (!list) return;
@@ -725,5 +1301,6 @@
   if (loginForm) initializeLogin(client, loginForm);
 
   var page = document.body.getAttribute("data-page");
+  if (page === "student-dashboard") initializeStudentNavigation();
   if (page === "student-dashboard" || page === "staff-dashboard" || page === "admin-dashboard") initializeDashboard(client, page);
 })();

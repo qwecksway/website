@@ -37,7 +37,7 @@
       <ul class="dash-nav">
         <li><a class="active" href="portal-staff-dashboard.html">Overview</a></li>
         <li><a href="#classes">My Classes</a></li>
-        <li><a href="#gradebook">Gradebook</a></li>
+        <li><a href="#gradebook">Academic marks</a></li>
         <li><a href="#notices">Staff Notices</a></li>
         <li><a href="#account-security">Account security</a></li>
         <li><a href="#calendar">Calendar</a></li>
@@ -49,23 +49,38 @@
       <div data-dashboard-content hidden>
 
       <h1>Welcome back</h1>
-      <p style="color:var(--stone); margin-bottom:2rem;">Your class assignments and pending gradebook entries.</p>
+      <p style="color:var(--stone); margin-bottom:2rem;">Your assigned classes, academic assessments, and school updates.</p>
 
-      <h3 id="classes">My classes this week</h3>
-      <table class="data-table" style="margin-bottom:2.5rem;">
-        <thead><tr><th>Day</th><th>Class</th><th>Subject</th></tr></thead>
-        <tbody id="staff-assignments"></tbody>
-      </table>
+      <h3 id="classes">My assigned classes and subjects</h3>
+      <div style="overflow-x:auto;margin-bottom:2.5rem;">
+        <table class="data-table">
+          <thead><tr><th>Class</th><th>Programme</th><th>Subject</th><th>Academic year</th></tr></thead>
+          <tbody id="staff-assignments"></tbody>
+        </table>
+      </div>
       <p id="staff-assignments-status" role="status" style="color:var(--stone);"></p>
 
-      <h3 id="gradebook">Pending gradebook entries</h3>
-      <table class="data-table" style="margin-bottom:2.5rem;">
-        <thead><tr><th>Class</th><th>Assessment</th><th>Status</th></tr></thead>
-        <tbody id="staff-gradebook"></tbody>
-      </table>
-      <p id="staff-gradebook-status" role="status" style="color:var(--stone);"></p>
+      <section id="gradebook" class="card" style="margin-bottom:2.5rem;">
+        <h2>Academic marks</h2>
+        <p>Choose one of your assigned classes and subjects, create an assessment, enter a mark for every enrolled student, then submit it for administrator review.</p>
+        <form id="staff-academic-assessment-form">
+          <div class="field"><label for="staff-academic-assignment">Assigned class and subject</label><select id="staff-academic-assignment" required></select></div>
+          <div class="field"><label for="staff-academic-term">Semester</label><select id="staff-academic-term" required></select></div>
+          <div class="field"><label for="staff-academic-assessment-title">Assessment name</label><input id="staff-academic-assessment-title" maxlength="120" required></div>
+          <div class="field"><label for="staff-academic-assessment-max">Maximum mark (up to 100)</label><input id="staff-academic-assessment-max" type="number" min="0.01" max="100" step="0.01" value="100" required></div>
+          <button class="btn btn-primary" type="submit">Create assessment</button>
+        </form>
+        <p id="staff-academic-status" class="alert" role="status" style="margin-top:1rem;"></p>
+        <div class="field"><label for="staff-academic-assessment">Your assessments</label><select id="staff-academic-assessment" required></select></div>
+        <button id="staff-academic-load-roster" class="btn btn-outline" type="button">Load student marks</button>
+        <div style="overflow-x:auto;margin-top:1rem;">
+          <table class="data-table"><thead><tr><th>Student</th><th>Index number</th><th>Mark</th><th>Action</th></tr></thead><tbody id="staff-academic-roster"></tbody></table>
+        </div>
+        <p id="staff-academic-roster-status" role="status" style="color:var(--stone);"></p>
+        <button id="staff-academic-submit" class="btn btn-primary" type="button" disabled>Submit marks for review</button>
+      </section>
 
-      <section id="house-fees">
+      <section id="house-fees" hidden>
         <h3>House student fee records</h3>
         <p style="color:var(--stone);">Fee changes are saved to the student's school record and appear on their dashboard immediately.</p>
         <div style="overflow-x:auto;">

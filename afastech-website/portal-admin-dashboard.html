@@ -36,6 +36,7 @@
       <ul class="dash-nav">
         <li><a class="active" href="portal-admin-dashboard.html">Overview</a></li>
         <li><a href="#accounts">Portal accounts</a></li>
+        <li><a href="#academics">Academic setup</a></li>
         <li><a href="#houses">House assignments</a></li>
         <li><a href="#fees">Student fee records</a></li>
         <li><a href="#provisioning">Provisioning guide</a></li>
@@ -64,11 +65,28 @@
             </div>
             <div class="field">
               <label for="admin-staff-position">Job title</label>
-              <input type="text" id="admin-staff-position" name="position" maxlength="120" placeholder="Teacher, House Master, Administrator" required>
+              <select id="admin-staff-position" name="position" required>
+                <option value="">Choose a job title</option>
+                <option value="Teacher">Teacher</option>
+                <option value="House Master">House Master</option>
+                <option value="House Mistress">House Mistress</option>
+                <option value="Head of Department">Head of Department</option>
+                <option value="Assistant Head">Assistant Head</option>
+                <option value="Headteacher">Headteacher</option>
+                <option value="Non-Teaching Staff">Non-Teaching Staff</option>
+              </select>
             </div>
             <div class="field">
               <label for="admin-staff-department">Department (optional)</label>
-              <input type="text" id="admin-staff-department" name="department" maxlength="120">
+              <select id="admin-staff-department" name="department">
+                <option value="">No department assigned</option>
+                <option value="MATHS/ICT">MATHS/ICT</option>
+                <option value="SCIENCE">SCIENCE</option>
+                <option value="ENGLISH">ENGLISH</option>
+                <option value="BUSINESS">BUSINESS</option>
+                <option value="TECHNICAL">TECHNICAL</option>
+                <option value="HOME ECONOMICS">HOME ECONOMICS</option>
+              </select>
             </div>
             <div class="field">
               <label for="admin-staff-password">Temporary password (at least 10 characters)</label>
@@ -89,6 +107,82 @@
             <tbody id="admin-profiles"></tbody>
           </table>
         </div>
+        <h3>Staff job titles and departments</h3>
+        <p style="color:var(--stone);">Only staff explicitly assigned the House Master or House Mistress job title can be assigned to a house.</p>
+        <div style="overflow-x:auto;margin-bottom:2rem;">
+          <table class="data-table">
+            <thead><tr><th>Staff member</th><th>Job title</th><th>Department</th><th>Update</th></tr></thead>
+            <tbody id="admin-staff-details"></tbody>
+          </table>
+        </div>
+        <section id="academics" style="margin-bottom:2.5rem;">
+          <h2>Academic setup</h2>
+          <p style="color:var(--stone);">Set up school years, the two semesters, programmes, classes, subjects, student enrolments, and teacher allocations. Existing student profiles and records remain the source of identity.</p>
+          <div class="grid grid-2">
+            <form id="admin-academic-year-form" class="card">
+              <h3>Academic year</h3>
+              <div class="field"><label for="admin-academic-year-name">Name</label><input id="admin-academic-year-name" maxlength="32" placeholder="2026/2027" required></div>
+              <div class="field"><label for="admin-academic-year-start">Start date</label><input id="admin-academic-year-start" type="date" required></div>
+              <div class="field"><label for="admin-academic-year-end">End date</label><input id="admin-academic-year-end" type="date" required></div>
+              <label><input id="admin-academic-year-current" type="checkbox"> Set as current year</label>
+              <button class="btn btn-primary" type="submit">Save year</button>
+            </form>
+            <form id="admin-academic-term-form" class="card">
+              <h3>Semester</h3>
+              <div class="field"><label for="admin-academic-term-year">Academic year</label><select id="admin-academic-term-year" required></select></div>
+              <div class="field"><label for="admin-academic-term-sequence">Semester</label><select id="admin-academic-term-sequence" required><option value="1">Semester 1</option><option value="2">Semester 2</option></select></div>
+              <div class="field"><label for="admin-academic-term-name">Semester label</label><input id="admin-academic-term-name" maxlength="40" placeholder="Semester 1" required></div>
+              <div class="field"><label for="admin-academic-term-start">Start date</label><input id="admin-academic-term-start" type="date" required></div>
+              <div class="field"><label for="admin-academic-term-end">End date</label><input id="admin-academic-term-end" type="date" required></div>
+              <label><input id="admin-academic-term-current" type="checkbox"> Set as current semester and year</label>
+              <button class="btn btn-primary" type="submit">Save semester</button>
+            </form>
+            <form id="admin-academic-programme-form" class="card">
+              <h3>Programme</h3>
+              <div class="field"><label for="admin-academic-programme-name">Programme name</label><input id="admin-academic-programme-name" maxlength="120" required></div>
+              <button class="btn btn-primary" type="submit">Save programme</button>
+            </form>
+            <form id="admin-academic-class-form" class="card">
+              <h3>Class</h3>
+              <div class="field"><label for="admin-academic-class-name">Class name</label><input id="admin-academic-class-name" maxlength="80" required></div>
+              <div class="field"><label for="admin-academic-class-programme">Programme</label><select id="admin-academic-class-programme" required></select></div>
+              <button class="btn btn-primary" type="submit">Save class</button>
+            </form>
+            <form id="admin-academic-subject-form" class="card">
+              <h3>Subject</h3>
+              <div class="field"><label for="admin-academic-subject-name">Subject name</label><input id="admin-academic-subject-name" maxlength="120" required></div>
+              <div class="field"><label for="admin-academic-subject-code">Short code (optional)</label><input id="admin-academic-subject-code" maxlength="24"></div>
+              <div class="field"><label for="admin-academic-subject-department">Department (optional)</label><select id="admin-academic-subject-department"></select></div>
+              <button class="btn btn-primary" type="submit">Save subject</button>
+            </form>
+            <form id="admin-academic-department-form" class="card">
+              <h3>Department</h3>
+              <div class="field"><label for="admin-academic-department-name">Department name</label><input id="admin-academic-department-name" maxlength="100" required></div>
+              <button class="btn btn-primary" type="submit">Save department</button>
+            </form>
+            <form id="admin-academic-enrolment-form" class="card">
+              <h3>Enrol student in a class</h3>
+              <div class="field"><label for="admin-academic-student">Student</label><select id="admin-academic-student" required></select></div>
+              <div class="field"><label for="admin-academic-enrol-class">Class</label><select id="admin-academic-enrol-class" required></select></div>
+              <div class="field"><label for="admin-academic-enrol-year">Academic year</label><select id="admin-academic-enrol-year" required></select></div>
+              <button class="btn btn-primary" type="submit">Save enrolment</button>
+            </form>
+            <form id="admin-academic-allocation-form" class="card">
+              <h3>Assign subject and teacher</h3>
+              <div class="field"><label for="admin-academic-allocation-class">Class</label><select id="admin-academic-allocation-class" required></select></div>
+              <div class="field"><label for="admin-academic-allocation-subject">Subject</label><select id="admin-academic-allocation-subject" required></select></div>
+              <div class="field"><label for="admin-academic-allocation-year">Academic year</label><select id="admin-academic-allocation-year" required></select></div>
+              <div class="field"><label for="admin-academic-allocation-teacher">Teacher</label><select id="admin-academic-allocation-teacher"><option value="">Unassigned</option></select></div>
+              <button class="btn btn-primary" type="submit">Save allocation</button>
+            </form>
+          </div>
+          <p id="admin-academic-status" class="alert" role="status" style="margin-top:1rem;"></p>
+          <h3>Academic structure</h3>
+          <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Year</th><th>Programme / class</th><th>Subject</th><th>Teacher</th></tr></thead><tbody id="admin-academic-structure"></tbody></table></div>
+          <h3 style="margin-top:2rem;">Submitted results for review</h3>
+          <p style="color:var(--stone);">Teachers submit marks for administrator review. Students can see results only after publication.</p>
+          <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Year / semester</th><th>Class</th><th>Subject</th><th>Assessment</th><th>Status / action</th></tr></thead><tbody id="admin-academic-assessments"></tbody></table></div>
+        </section>
         <section id="houses" style="margin-bottom:2.5rem;">
           <h2>Houses and assignments</h2>
           <form id="admin-house-form" class="card" style="margin-bottom:1rem;">
@@ -100,7 +194,7 @@
           </form>
           <form id="admin-house-assignment-form" class="card">
             <div class="field">
-              <label for="admin-house-person">Student or House Master</label>
+              <label for="admin-house-person">Student or designated House Master</label>
               <select id="admin-house-person" required></select>
             </div>
             <div class="field">

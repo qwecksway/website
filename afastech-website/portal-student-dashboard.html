@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Dashboard — AFASTECH</title>
+<meta name="description" content="AFASTECH Student Portal — your academic information, results, fees, and school announcements.">
+<meta name="robots" content="noindex, nofollow">
+<title>Student Portal — AFASTECH</title>
 <link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
@@ -12,73 +14,160 @@
 <body data-page="student-dashboard">
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<div class="announce-bar">
-  <div class="announce-track">
-    <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
-    <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
+<div class="student-portal-layout">
+  <aside class="student-portal-sidebar" id="student-portal-sidebar">
+    <a class="student-sidebar-brand" href="portal-student-dashboard.html">
+      <img src="assets/afastech-crest.jpg" alt="">
+      <span><strong>AFASTECH</strong><small>Student Portal</small></span>
+    </a>
+    <p class="student-sidebar-label">STUDENT SERVICES</p>
+    <nav class="student-portal-nav" aria-label="Student portal">
+      <a class="is-current" href="#overview" aria-current="page"><span>01</span> Overview</a>
+      <a href="#personal-details"><span>02</span> Personal details</a>
+      <a href="#academics"><span>03</span> My academics</a>
+      <a href="#subjects"><span>04</span> Subjects</a>
+      <a href="#timetable"><span>05</span> Timetable</a>
+      <a href="#results"><span>06</span> Results</a>
+      <a href="#fees"><span>07</span> Fees</a>
+      <a href="#notices"><span>08</span> Announcements</a>
+    </nav>
+    <div class="student-sidebar-footer">
+      <a href="index.html">Visit school website</a>
+      <a href="#" data-portal-signout data-portal-type="student">Sign out</a>
+    </div>
+  </aside>
+  <button class="student-sidebar-backdrop" type="button" aria-label="Close student portal menu" tabindex="-1"></button>
+
+  <div class="student-portal-main">
+    <header class="student-portal-topbar">
+      <button class="student-sidebar-toggle" type="button" aria-controls="student-portal-sidebar" aria-expanded="false" aria-label="Open student portal menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="student-topbar-label">STUDENT INFORMATION SYSTEM</div>
+      <div class="student-topbar-user">
+        <span class="student-user-avatar" aria-hidden="true">A</span>
+        <span><small>Signed in as</small><strong data-portal-user>Student</strong></span>
+      </div>
+    </header>
+
+    <main id="main" class="student-portal-content">
+      <div id="portal-data-alert" class="alert" role="status"></div>
+      <div data-dashboard-content hidden>
+        <section id="overview" class="student-welcome">
+          <div>
+            <p class="student-eyebrow">AFADJATO SENIOR HIGH TECHNICAL SCHOOL</p>
+            <h1>Welcome, <span data-student-first-name>Student</span></h1>
+            <p>Your school information and academic updates, all in one place.</p>
+          </div>
+          <div class="student-welcome-mark" aria-hidden="true">A</div>
+        </section>
+
+        <section id="personal-details" class="student-panel student-personal-panel">
+          <div class="student-panel-heading">
+            <div><p class="student-eyebrow">YOUR SCHOOL RECORD</p><h2>Personal details</h2></div>
+            <span class="student-panel-note">Managed by the school</span>
+          </div>
+          <dl class="student-personal-grid">
+            <div><dt>Full name</dt><dd data-student-full-name>Not set</dd></div>
+            <div><dt>School email</dt><dd data-student-email>Not set</dd></div>
+            <div><dt>Index number</dt><dd data-student-personal-index>Not set</dd></div>
+            <div><dt>Class</dt><dd data-student-personal-class>Not set</dd></div>
+            <div><dt>Programme</dt><dd data-student-personal-programme>Not set</dd></div>
+            <div><dt>Residency</dt><dd data-student-personal-residency>Not set</dd></div>
+          </dl>
+          <p class="student-personal-note">If any of these details are incorrect, contact the school office to update your official record.</p>
+        </section>
+
+        <section id="academics" class="student-summary-grid" aria-label="Academic overview">
+          <article class="student-summary-card student-summary-primary">
+            <span class="student-summary-label">PROGRAMME</span>
+            <strong data-student-programme>Loading…</strong>
+            <span class="student-summary-foot">Your course of study</span>
+          </article>
+          <article class="student-summary-card">
+            <span class="student-summary-label">CURRENT SEMESTER</span>
+            <strong data-student-term>Loading…</strong>
+            <span class="student-summary-foot">Academic year information</span>
+          </article>
+          <article class="student-summary-card">
+            <span class="student-summary-label">RESIDENCY</span>
+            <strong data-student-residency>Loading…</strong>
+            <span class="student-summary-foot">Class: <span data-student-form-class>Not set</span></span>
+          </article>
+          <article class="student-summary-card">
+            <span class="student-summary-label">INDEX NUMBER</span>
+            <strong data-student-index>Not set</strong>
+            <span class="student-summary-foot">Student identification</span>
+          </article>
+        </section>
+
+        <section id="subjects" class="student-panel student-personal-panel">
+          <div class="student-panel-heading">
+            <div><p class="student-eyebrow">CURRENT ENROLMENT</p><h2>My subjects and teachers</h2></div>
+          </div>
+          <p id="student-subjects-status" class="student-empty-note" role="status"></p>
+          <div class="student-table-wrap">
+            <table class="student-data-table">
+              <thead><tr><th>Subject</th><th>Teacher</th><th>Class</th><th>Academic year</th></tr></thead>
+              <tbody id="student-subjects"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="student-dashboard-columns">
+          <div class="student-dashboard-primary">
+            <section id="timetable" class="student-panel">
+              <div class="student-panel-heading">
+                <div><p class="student-eyebrow">YOUR WEEK</p><h2>Class timetable</h2></div>
+                <span class="student-panel-note">Monday – Friday</span>
+              </div>
+              <p id="student-timetable-status" class="student-empty-note" role="status"></p>
+              <div class="student-table-wrap">
+                <table class="student-data-table">
+                  <thead><tr><th>Day</th><th>Morning</th><th>Afternoon</th></tr></thead>
+                  <tbody id="student-timetable"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="results" class="student-panel">
+              <div class="student-panel-heading">
+                <div><p class="student-eyebrow">ACADEMIC RECORD</p><h2>Recent results</h2></div>
+                <span class="student-panel-note">Latest assessments</span>
+              </div>
+              <p id="student-results-status" class="student-empty-note" role="status"></p>
+              <div class="student-table-wrap">
+                <table class="student-data-table">
+                  <thead><tr><th>Subject</th><th>Assessment</th><th>Semester</th><th>Score</th></tr></thead>
+                  <tbody id="student-results"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <aside class="student-dashboard-secondary">
+            <section id="fees" class="student-fees-panel">
+              <p class="student-eyebrow">ACCOUNT</p>
+              <h2>Fees status</h2>
+              <p class="student-fees-value" data-student-fees>Loading…</p>
+              <p class="student-fees-help">Your latest fee status recorded by the school.</p>
+            </section>
+
+            <section id="notices" class="student-panel student-notices-panel">
+              <div class="student-panel-heading">
+                <div><p class="student-eyebrow">FROM YOUR SCHOOL</p><h2>Announcements</h2></div>
+              </div>
+              <div id="portal-announcements"></div>
+            </section>
+          </aside>
+        </div>
+
+        <p id="student-data-status" class="student-empty-note" role="status"></p>
+      </div>
+    </main>
+    <footer class="student-portal-footer">© <span data-year></span> Afadjato Senior High Technical School</footer>
   </div>
 </div>
-<header class="portal-dash-header">
-  <div class="container">
-    <a class="brand" href="index.html" style="color:var(--white);">
-      <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
-      <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Student Portal</span></span>
-    </a>
-    <div style="display:flex; align-items:center; gap:1rem;">
-      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Student</strong></span>
-      <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="student">Sign Out</a>
-</header>
-
-<main id="main" class="portal-shell">
-  <div class="container dash-grid">
-    <nav aria-label="Dashboard">
-      <ul class="dash-nav">
-        <li><a class="active" href="portal-student-dashboard.html">Overview</a></li>
-        <li><a href="#timetable">Timetable</a></li>
-        <li><a href="#results">Results</a></li>
-        <li><a href="#notices">Notices</a></li>
-        <li><a href="#fees">Fees Status</a></li>
-      </ul>
-    </nav>
-
-    <div>
-      <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
-      <div data-dashboard-content hidden>
-
-      <h1>Welcome back</h1>
-      <p style="color:var(--stone); margin-bottom:2rem;">Here's what's happening in your programme this week.</p>
-
-      <div class="grid grid-3" style="margin-bottom:2.5rem;">
-        <div class="card"><h4>Programme</h4><p data-student-programme>Loading…</p></div>
-        <div class="card"><h4>Residency</h4><p data-student-residency>Loading…</p></div>
-        <div class="card"><h4>Current Term</h4><p data-student-term>Loading…</p></div>
-      </div>
-
-      <p id="student-data-status" role="status" style="color:var(--stone);"></p>
-      <h3 id="timetable">This week's timetable</h3>
-      <table class="data-table" style="margin-bottom:2.5rem;">
-        <thead><tr><th>Day</th><th>Morning</th><th>Afternoon</th></tr></thead>
-        <tbody id="student-timetable"></tbody>
-      </table>
-      <p id="student-timetable-status" role="status" style="color:var(--stone);"></p>
-
-      <h3 id="results">Recent results</h3>
-      <table class="data-table" style="margin-bottom:2.5rem;">
-        <thead><tr><th>Subject</th><th>Assessment</th><th>Score</th></tr></thead>
-        <tbody id="student-results"></tbody>
-      </table>
-      <p id="student-results-status" role="status" style="color:var(--stone);"></p>
-
-      <h3 id="notices">Notices</h3>
-      <div id="portal-announcements"></div>
-      <div class="card" id="fees" style="margin-bottom:1rem;">
-        <h4>Fees status</h4>
-        <p data-student-fees style="color:var(--stone);">Loading…</p>
-      </div>
-    </div>
-    </div>
-  </div>
-</main>
 
 <script src="js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>

@@ -33,6 +33,8 @@ afastech-website/
 
 Supabase configuration and database migrations are kept in the repository-root `supabase/` directory, alongside this site folder.
 
+After student sign-in, the student dashboard presents an AFASTECH-branded information-system workspace with a Personal Details section, programme details, timetable, assessment results, fee status, and announcements. Personal Details displays the authenticated profile and the student's existing `student_details` fields; it is read-only, so corrections to official records should be requested from the school office. The portal does not create a separate student account or duplicate academic record.
+
 ## What's real vs. placeholder
 
 **Real, from the 2025/2026 School Improvement Plan:**
@@ -49,7 +51,7 @@ District/region, founding year and story, land size, boarding-since-2017 note, h
 
 The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.112.3). Browser code contains only the project URL and publishable/anon key; database access is restricted by Postgres Row Level Security (RLS). Never put a `service_role` or secret key in this static site.
 
-1. The live Supabase project already contains `profiles`, `student_details`, `staff_details`, the `user_role` type, existing administrator policies, and an Auth user trigger. The migrations intentionally preserve those objects. `202610030001_portal_security.sql` is a guarded adoption baseline: it checks that existing schema before any new migration runs. `202610040001_admin_foundation.sql` adds portal-only read tables, admin role management, and leaves newly invited profiles pending instead of automatically assigning the Student role. `202610040002_shared_house_fee_records.sql` extends the existing `student_details` row with shared house and fee fields; it does not create a duplicate student profile. `202610040003_profile_role_update_guard.sql` prevents users from changing their own portal role through direct profile updates.
+1. The live Supabase project already contains `profiles`, `student_details`, `staff_details`, the `user_role` type, existing administrator policies, and an Auth user trigger. The migrations intentionally preserve those objects. `202610030001_portal_security.sql` is a guarded adoption baseline: it checks that existing schema before any new migration runs. `202610040001_admin_foundation.sql` adds portal-only read tables and admin role management. `202610040002_shared_house_fee_records.sql` extends the existing `student_details` row with shared house and fee fields. `202610040003_profile_role_update_guard.sql` prevents users from changing their own portal role through direct profile updates. `202610040004_academic_management.sql` adds academic years and semesters, programmes, classes, departments, subjects, yearly enrolments, teacher allocations, assessments, marks, and role-checked academic functions. `202610040005_staff_house_roles_and_semesters.sql` limits the calendar to two semesters and reserves house assignment and fee access to staff explicitly designated as House Master or House Mistress. Existing student profiles remain the identity source.
 2. Install the Supabase CLI. From the repository root (`C:\WEBSITE`), link the existing project and check its migration history before applying changes:
 
     ```powershell
@@ -84,16 +86,22 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
     supabase functions deploy invite-staff --project-ref YOUR_PROJECT_REF --use-api
     ```
 
-   The function verifies the signed-in caller's database role, creates a confirmed Supabase Auth user with the temporary password entered by the Super Admin, assigns the Staff role, and stores the job title and department in `staff_details`. This flow sends no email and does not require SMTP. Share the temporary password privately; staff and teachers sign in through the Staff Portal and should change it immediately using Account security. Staff and teachers share the `staff` role; their job title distinguishes their position.
+   The function verifies the signed-in caller's database role, creates a confirmed Supabase Auth user with the temporary password entered by the Super Admin, assigns the Staff role, and stores the selected job title and department in `staff_details`. Job titles are Teacher, House Master, House Mistress, Head of Department, Assistant Head, Headteacher, or Non-Teaching Staff. Departments are MATHS/ICT, SCIENCE, ENGLISH, BUSINESS, TECHNICAL, or HOME ECONOMICS (optional). This flow sends no email and does not require SMTP. Share the temporary password privately; staff and teachers sign in through the Staff Portal and should change it immediately using Account security. Staff and teachers share the `staff` role; their job title distinguishes their position.
 7. In Supabase Authentication settings, review email/password policy, enable CAPTCHA if appropriate, and set Auth rate limits and session time-box/inactivity limits to school policy. Password hashing and verification are handled by Supabase Auth. The website does not store or hash passwords itself.
 8. In the Super Admin portal, create houses, assign students and House Masters, and review or update student fee statuses. A House Master can update only students in assigned houses; the Super Admin can manage all student fee statuses. Both write to the same `student_details` row that the student's portal reads. Supabase Realtime sends fee-status changes to an already-open student dashboard.
 9. Serve and test over HTTPS using the real deployment origin. Database access is restricted by RLS, and privileged account and fee operations use role-checked database functions; never expose a `service_role` key or grant users roles through editable metadata.
+
+## Academic management (Phase 2)
+
+After applying migrations `202610040004_academic_management.sql` and `202610040005_staff_house_roles_and_semesters.sql`, use the private Super Admin portal to set academic years and the school's two semesters, create programmes/classes/departments/subjects, enrol existing student accounts, and allocate subjects to existing staff accounts. Mark entry is limited to the assigned teacher and enrolled students; marks use the existing 0–100 scale. Teachers submit complete assessments for review, and students can see marks only after an administrator publishes them. Student results include previously stored `student_results` rows as well as published academic assessments.
+
+Bulk PDF result processing is not enabled yet. The school must provide a representative, privacy-scrubbed result PDF and confirm its official result layout and grading rules before a parser or import workflow can be designed; extracted marks must be staged and reviewed before publication.
 
 The initial fee workflow updates the existing `fees_status` field (for example, a school-defined status). It is not yet a transaction ledger for amounts, payments, balances, or receipts.
 
 The static site calls Supabase Auth and Data APIs directly; staff account creation uses an Edge Function because it requires the privileged Auth Admin API. Its allowed browser origin is configured explicitly; do not use wildcard origins for authenticated operations. CORS is not a substitute for RLS or authorization. Configure hosting security headers for the deployed website.
 
-Gradebook, student results, and announcements remain read-only in this phase. Add narrowly scoped role-checked operations before enabling edits to those records. Review access using separate student, staff, and Super Admin test accounts before using real school data.
+Announcements remain read-only. Review academic access with separate student, staff, and Super Admin accounts, including tests for role boundaries, unassigned classes, incomplete marks, and unpublished results, before using real school data.
 
 Public navigation exposes only the Student and Staff portals. The Super Admin login is a separate, privately shared URL and is marked `noindex`; this reduces public discoverability but is not an access-control measure. Authentication and database role checks protect the admin tools.
 

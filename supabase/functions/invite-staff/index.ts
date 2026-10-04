@@ -42,6 +42,23 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const allowedPositions = new Set([
+    "Teacher",
+    "House Master",
+    "House Mistress",
+    "Head of Department",
+    "Assistant Head",
+    "Headteacher",
+    "Non-Teaching Staff",
+  ]);
+  const allowedDepartments = new Set([
+    "MATHS/ICT",
+    "SCIENCE",
+    "ENGLISH",
+    "BUSINESS",
+    "TECHNICAL",
+    "HOME ECONOMICS",
+  ]);
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     console.error("Required Supabase or site URL environment variables are missing.");
     return response({ error: "Staff invitations are not configured." }, 500, requestOrigin);
@@ -74,8 +91,11 @@ Deno.serve(async (request) => {
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return response({ error: "Enter a valid school email address." }, 400, requestOrigin);
   }
-  if (position.length < 1 || position.length > 120 || department.length > 120) {
-    return response({ error: "Enter a job title of 1–120 characters and a department of at most 120 characters." }, 400, requestOrigin);
+  if (!allowedPositions.has(position)) {
+    return response({ error: "Choose a job title from the approved list." }, 400, requestOrigin);
+  }
+  if (department && !allowedDepartments.has(department)) {
+    return response({ error: "Choose a department from the approved list." }, 400, requestOrigin);
   }
   if (temporaryPassword.length < 10 || temporaryPassword.length > 128) {
     return response({ error: "Temporary password must contain between 10 and 128 characters." }, 400, requestOrigin);
