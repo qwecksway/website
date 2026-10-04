@@ -52,7 +52,7 @@
         </div>
         <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
           <h2>Add a staff member or teacher</h2>
-          <p>Send a secure sign-in invitation. New accounts are created with the Staff Portal role.</p>
+          <p>Create the account directly in Supabase. The temporary password is not emailed. Share it with the staff member through a private channel and ask them to change it after their first sign-in.</p>
           <form id="admin-staff-form">
             <div class="field">
               <label for="admin-staff-name">Full name</label>
@@ -70,9 +70,17 @@
               <label for="admin-staff-department">Department (optional)</label>
               <input type="text" id="admin-staff-department" name="department" maxlength="120">
             </div>
-            <button class="btn btn-primary" type="submit">Create Staff Account &amp; Send Invitation</button>
+            <div class="field">
+              <label for="admin-staff-password">Temporary password (at least 10 characters)</label>
+              <input type="password" id="admin-staff-password" name="temporary_password" minlength="10" autocomplete="new-password" required>
+              <label for="admin-staff-show-password">
+                <input type="checkbox" id="admin-staff-show-password">
+                Show temporary password
+              </label>
+            </div>
+            <button class="btn btn-primary" type="submit">Create Staff Account</button>
           </form>
-          <p id="admin-staff-status" role="status" style="color:var(--stone);"></p>
+          <p id="admin-staff-status" class="alert" role="status" style="margin-top:1rem;"></p>
         </section>
         <h2 id="accounts">Portal accounts</h2>
         <div style="overflow-x:auto;">

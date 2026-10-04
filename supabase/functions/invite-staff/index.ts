@@ -42,20 +42,8 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const siteUrl = Deno.env.get("SITE_URL");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey || !siteUrl) {
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     console.error("Required Supabase or site URL environment variables are missing.");
-    return response({ error: "Staff invitations are not configured." }, 500, requestOrigin);
-  }
-  let invitationRedirect: string;
-  try {
-    const configuredSite = new URL(siteUrl);
-    if (configuredSite.protocol !== "https:" && configuredSite.hostname !== "localhost") {
-      throw new Error("SITE_URL must use HTTPS.");
-    }
-    invitationRedirect = new URL("/portal-set-password.html", configuredSite.origin).toString();
-  } catch (error) {
-    console.error("The configured invitation Site URL is invalid.", error);
     return response({ error: "Staff invitations are not configured." }, 500, requestOrigin);
   }
 
@@ -76,6 +64,9 @@ Deno.serve(async (request) => {
   const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
   const position = typeof input.position === "string" ? input.position.trim() : "";
   const department = typeof input.department === "string" ? input.department.trim() : "";
+  const temporaryPassword = typeof input.temporary_password === "string"
+    ? input.temporary_password
+    : "";
 
   if (fullName.length < 1 || fullName.length > 120) {
     return response({ error: "Full name must contain between 1 and 120 characters." }, 400, requestOrigin);
@@ -85,6 +76,9 @@ Deno.serve(async (request) => {
   }
   if (position.length < 1 || position.length > 120 || department.length > 120) {
     return response({ error: "Enter a job title of 1–120 characters and a department of at most 120 characters." }, 400, requestOrigin);
+  }
+  if (temporaryPassword.length < 10 || temporaryPassword.length > 128) {
+    return response({ error: "Temporary password must contain between 10 and 128 characters." }, 400, requestOrigin);
   }
 
   const caller = createClient(supabaseUrl, anonKey, {
@@ -112,23 +106,22 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
-    {
-      data: { full_name: fullName },
-      redirectTo: invitationRedirect,
-    },
-  );
-  if (inviteError || !invitation.user) {
-    console.error("Staff invitation failed.", inviteError);
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (createError || !created.user) {
+    console.error("Staff account creation failed.", createError);
     return response(
-      { error: inviteError?.message || "Supabase did not create the invited account." },
+      { error: createError?.message || "Supabase did not create the staff account." },
       400,
       requestOrigin,
     );
   }
 
-  const userId = invitation.user.id;
+  const userId = created.user.id;
   const { data: updatedProfile, error: roleError } = await admin
     .from("profiles")
     .update({ role: "staff", full_name: fullName })
@@ -157,8 +150,8 @@ Deno.serve(async (request) => {
     console.error("Could not save the invited staff member's details.", detailsError);
     const { error: rollbackError } = await admin.auth.admin.deleteUser(userId);
     if (rollbackError) console.error("Could not remove the incomplete invited account.", rollbackError);
-    return response({ error: "The staff profile could not be saved; the invitation was cancelled." }, 500, requestOrigin);
+    return response({ error: "The staff profile could not be saved; the incomplete account was removed." }, 500, requestOrigin);
   }
 
-  return response({ user_id: userId }, 201, requestOrigin);
+  return response({ user_id: userId, email }, 201, requestOrigin);
 });

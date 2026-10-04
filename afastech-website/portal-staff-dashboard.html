@@ -39,6 +39,7 @@
         <li><a href="#classes">My Classes</a></li>
         <li><a href="#gradebook">Gradebook</a></li>
         <li><a href="#notices">Staff Notices</a></li>
+        <li><a href="#account-security">Account security</a></li>
         <li><a href="#calendar">Calendar</a></li>
       </ul>
     </nav>
@@ -78,6 +79,23 @@
 
       <h3 id="notices">Staff notices</h3>
       <div id="portal-announcements"></div>
+
+      <section id="account-security" class="card" style="margin-top:2rem;">
+        <h3>Change your password</h3>
+        <p>Your account was set up with a temporary password. Change it now to a private password only you know.</p>
+        <form id="staff-password-form">
+          <div class="field">
+            <label for="staff-new-password">New password (at least 10 characters)</label>
+            <input type="password" id="staff-new-password" autocomplete="new-password" minlength="10" required>
+          </div>
+          <div class="field">
+            <label for="staff-confirm-password">Confirm new password</label>
+            <input type="password" id="staff-confirm-password" autocomplete="new-password" minlength="10" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Change Password</button>
+        </form>
+        <p id="staff-password-status" class="alert" role="status" style="margin-top:1rem;"></p>
+      </section>
       </div>
     </div>
   </div>

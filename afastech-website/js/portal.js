@@ -468,13 +468,19 @@
     var form = document.getElementById("admin-staff-form");
     var status = document.getElementById("admin-staff-status");
     if (!form) return;
+    var passwordInput = document.getElementById("admin-staff-password");
+    var showPassword = document.getElementById("admin-staff-show-password");
+    showPassword.addEventListener("change", function () {
+      passwordInput.type = showPassword.checked ? "text" : "password";
+    });
 
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       var button = form.querySelector("button[type='submit']");
       var data = new FormData(form);
+      var temporaryPassword = String(data.get("temporary_password") || "");
       button.disabled = true;
-      showAlert(status, "Creating the Staff Portal account and sending its invitation…", "success");
+      showAlert(status, "Creating the Staff Portal account…", "success");
 
       try {
         var result = await client.functions.invoke("invite-staff", {
@@ -482,18 +488,29 @@
             full_name: String(data.get("full_name") || "").trim(),
             email: String(data.get("email") || "").trim().toLowerCase(),
             position: String(data.get("position") || "").trim(),
-            department: String(data.get("department") || "").trim()
+            department: String(data.get("department") || "").trim(),
+            temporary_password: temporaryPassword
           }
         });
         if (result.error) throw result.error;
 
         showAlert(
           status,
-          "Staff account created and invitation sent. The new account can sign in through the Staff Portal after accepting the email.",
+          "Staff account created in Supabase Auth. Share the temporary password privately; the staff member should change it after signing in.",
           "success"
         );
         form.reset();
-        await loadAdminDashboard(client);
+        passwordInput.type = "password";
+        passwordInput.value = temporaryPassword;
+        try {
+          await loadAdminDashboard(client);
+        } catch (error) {
+          showAlert(
+            status,
+            "Staff account created, but the account list could not be refreshed. Reload the page; share the temporary password privately.",
+            "error"
+          );
+        }
       } catch (error) {
         showAlert(
           status,
@@ -502,6 +519,40 @@
             : "The staff account could not be created. Check the email address and Edge Function setup, then try again.",
           "error"
         );
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  function initializeStaffPasswordChange(client) {
+    var form = document.getElementById("staff-password-form");
+    if (!form) return;
+    var status = document.getElementById("staff-password-status");
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var password = document.getElementById("staff-new-password").value;
+      var confirmation = document.getElementById("staff-confirm-password").value;
+      if (password.length < 10) {
+        showAlert(status, "Your new password must contain at least 10 characters.", "error");
+        return;
+      }
+      if (password !== confirmation) {
+        showAlert(status, "The new passwords do not match.", "error");
+        return;
+      }
+
+      var button = form.querySelector("button[type='submit']");
+      button.disabled = true;
+      showAlert(status, "Updating your password…", "success");
+      try {
+        var result = await client.auth.updateUser({ password: password });
+        if (result.error) throw result.error;
+        form.reset();
+        showAlert(status, "Password changed. Keep it private.", "success");
+      } catch (error) {
+        showAlert(status, "Your password could not be changed. Check your connection and try again.", "error");
       } finally {
         button.disabled = false;
       }
@@ -656,7 +707,10 @@
         await loadStudentDashboard(client, session.user.id);
         watchStudentFeeChanges(client, session.user.id);
       }
-      else if (requiredRole === "staff") await loadStaffDashboard(client, session.user.id);
+      else if (requiredRole === "staff") {
+        await loadStaffDashboard(client, session.user.id);
+        initializeStaffPasswordChange(client);
+      }
       else {
         await loadAdminDashboard(client);
         initializeStaffInvite(client);
