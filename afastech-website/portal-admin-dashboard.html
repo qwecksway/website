@@ -52,13 +52,30 @@
           <div class="card"><h4>Staff accounts</h4><p data-admin-staff-count>0</p></div>
         </div>
         <section id="student-import" class="card" style="margin-bottom:2.5rem;">
-          <h2>Register the SHS 3 student cohort</h2>
-          <p>Paste or select the roster export with columns <strong>School Code, Name, CassRefID, LEARNING_AREA, YearOfEntry</strong>. Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
+          <h2>Register students</h2>
+          <p>Load a batch roster or create one student account. Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
+          <div class="field">
+            <label for="admin-student-import-year">Academic year</label>
+            <select id="admin-student-import-year" required>
+              <option value="">Loading academic years…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="admin-student-import-current">
+              <input type="checkbox" id="admin-student-import-current" checked>
+              Make this the current academic year
+            </label>
+          </div>
+          <h3>Load a batch</h3>
+          <p>Use a CSV or tab-separated roster with columns <strong>School Code, Name, CassRefID, LEARNING_AREA, YearOfEntry</strong>.</p>
           <form id="admin-student-import-form">
             <div class="field">
-              <label for="admin-student-import-year">Academic year</label>
-              <select id="admin-student-import-year" required>
-                <option value="">Loading academic years…</option>
+              <label for="admin-student-import-class">Class</label>
+              <select id="admin-student-import-class" required>
+                <option value="">Choose class</option>
+                <option value="SHS 1">SHS 1</option>
+                <option value="SHS 2">SHS 2</option>
+                <option value="SHS 3">SHS 3</option>
               </select>
             </div>
             <div class="field">
@@ -66,13 +83,36 @@
               <input type="file" id="admin-student-import-file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
               <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="School Code&#9;Name&#9;CassRefID&#9;LEARNING_AREA&#9;YearOfEntry"></textarea>
             </div>
+            <button class="btn btn-primary" type="submit">Create batch accounts</button>
+          </form>
+          <h3>Create an individual student account</h3>
+          <form id="admin-student-single-form">
             <div class="field">
-              <label for="admin-student-import-current">
-                <input type="checkbox" id="admin-student-import-current" checked>
-                Make this the current academic year
-              </label>
+              <label for="admin-student-single-class">Class</label>
+              <select id="admin-student-single-class" required>
+                <option value="">Choose class</option>
+                <option value="SHS 1">SHS 1</option>
+                <option value="SHS 2">SHS 2</option>
+                <option value="SHS 3">SHS 3</option>
+              </select>
             </div>
-            <button class="btn btn-primary" type="submit">Create SHS 3 student accounts</button>
+            <div class="field">
+              <label for="admin-student-single-name">Full name</label>
+              <input id="admin-student-single-name" type="text" maxlength="120" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="admin-student-single-index">CassRefID / index number</label>
+              <input id="admin-student-single-index" type="text" maxlength="12" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="admin-student-single-programme">Learning area / programme</label>
+              <input id="admin-student-single-programme" type="text" maxlength="120" required>
+            </div>
+            <div class="field">
+              <label for="admin-student-single-entry-year">Year of entry</label>
+              <input id="admin-student-single-entry-year" type="number" min="1900" max="2199" step="1" required>
+            </div>
+            <button class="btn btn-outline" type="submit">Create individual account</button>
           </form>
           <p id="admin-student-import-status" class="alert" role="status" style="margin-top:1rem;"></p>
           <button id="admin-student-import-download" class="btn btn-outline" type="button" hidden>Download one-time student credentials</button>

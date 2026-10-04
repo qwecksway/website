@@ -1187,7 +1187,7 @@
     return '"' + text.replace(/"/g, '""') + '"';
   }
 
-  function downloadStudentCredentials(credentials, academicYear) {
+  function downloadStudentCredentials(credentials, academicYear, className) {
     var header = ["CassRefID", "Name", "Temporary password"];
     var rows = credentials.map(function (credential) {
       return [
@@ -1200,7 +1200,8 @@
     var blobUrl = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
     var link = document.createElement("a");
     link.href = blobUrl;
-    link.download = "afastech-shs3-credentials-" + academicYear.replace(/[^0-9]/g, "-") + ".csv";
+    link.download = "afastech-" + className.toLowerCase().replace(/[^a-z0-9]+/g, "-") +
+      "-credentials-" + academicYear.replace(/[^0-9]/g, "-") + ".csv";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1216,6 +1217,7 @@
     var downloadButton = document.getElementById("admin-student-import-download");
     var pendingCredentials = [];
     var pendingYear = "";
+    var pendingClass = "";
 
     fileInput.addEventListener("change", function () {
       var file = fileInput.files && fileInput.files[0];
@@ -1238,50 +1240,43 @@
 
     downloadButton.addEventListener("click", function () {
       if (!pendingCredentials.length) return;
-      downloadStudentCredentials(pendingCredentials, pendingYear);
+      downloadStudentCredentials(pendingCredentials, pendingYear, pendingClass);
       pendingCredentials = [];
       pendingYear = "";
+      pendingClass = "";
       downloadButton.hidden = true;
       showAlert(status, "Credential file downloaded. Keep it private; the passwords cannot be retrieved from the portal again.", "success");
     });
 
-    form.addEventListener("submit", async function (event) {
-      event.preventDefault();
+    async function createStudentAccounts(students, className, submitForm) {
       if (pendingCredentials.length) {
         showAlert(status, "Download the previous credential file before starting another import.", "error");
-        return;
+        return false;
       }
       var academicYear = document.getElementById("admin-student-import-year").value;
       var makeCurrent = document.getElementById("admin-student-import-current").checked;
-      var students;
-      try {
-        students = parseStudentRoster(rosterInput.value);
-      } catch (error) {
-        showAlert(status, error.message, "error");
-        return;
-      }
       if (students.length > 500) {
-        showAlert(status, "Import no more than 500 students at a time.", "error");
-        return;
+        showAlert(status, "Create no more than 500 student accounts at a time.", "error");
+        return false;
       }
       if (!academicYear) {
-        showAlert(status, "Choose an academic year before importing.", "error");
-        return;
+        showAlert(status, "Choose an academic year before creating accounts.", "error");
+        return false;
       }
       var confirmed = window.confirm(
-        "Create " + students.length + " SHS 3 student accounts for " + academicYear +
+        "Create " + students.length + " student account(s) in " + className + " for " + academicYear +
         " and generate a different temporary password for each student? The credentials will be downloadable only once."
       );
-      if (!confirmed) return;
+      if (!confirmed) return false;
 
-      var button = form.querySelector("button[type='submit']");
+      var button = submitForm.querySelector("button[type='submit']");
       button.disabled = true;
       showAlert(status, "Creating student accounts and academic enrolments…", "success");
       try {
         var result = await client.functions.invoke("import-student-roster", {
           body: {
             academic_year: academicYear,
-            class_name: "SHS 3",
+            class_name: className,
             make_current: makeCurrent,
             students: students
           }
@@ -1292,8 +1287,7 @@
         }
         pendingCredentials = result.data.credentials;
         pendingYear = result.data.academic_year;
-        rosterInput.value = "";
-        fileInput.value = "";
+        pendingClass = result.data.class_name;
         downloadButton.hidden = false;
         showAlert(
           status,
@@ -1312,10 +1306,52 @@
           );
         }
       } catch (error) {
-        showAlert(status, error.message || "Student roster import failed. Check the roster and try again.", "error");
+        showAlert(status, error.message || "Student account creation failed. Check the details and try again.", "error");
+        return false;
       } finally {
         button.disabled = false;
       }
+      return pendingCredentials.length > 0;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var students;
+      try {
+        students = parseStudentRoster(rosterInput.value);
+      } catch (error) {
+        showAlert(status, error.message, "error");
+        return;
+      }
+      var className = document.getElementById("admin-student-import-class").value;
+      if (!className) {
+        showAlert(status, "Choose the class for this batch.", "error");
+        return;
+      }
+      var imported = await createStudentAccounts(students, className, form);
+      if (imported) {
+        rosterInput.value = "";
+        fileInput.value = "";
+      }
+    });
+
+    var singleForm = document.getElementById("admin-student-single-form");
+    singleForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var student = {
+        school_code: "0071007",
+        full_name: document.getElementById("admin-student-single-name").value.trim(),
+        index_number: document.getElementById("admin-student-single-index").value.trim(),
+        learning_area: document.getElementById("admin-student-single-programme").value.trim(),
+        year_of_entry: document.getElementById("admin-student-single-entry-year").value
+      };
+      var className = document.getElementById("admin-student-single-class").value;
+      if (!student.full_name || !student.index_number || !student.learning_area || !student.year_of_entry || !className) {
+        showAlert(status, "Enter the student's name, CassRefID, learning area, entry year, and class.", "error");
+        return;
+      }
+      var imported = await createStudentAccounts([student], className, singleForm);
+      if (imported) singleForm.reset();
     });
   }
 

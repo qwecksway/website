@@ -4,13 +4,6 @@ const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedLearningAreas = new Set([
-  "AGRICULTURE",
-  "HOME ECONOMICS",
-  "APPLIED TECHNOLOGY",
-  "BUSINESS",
-  "GENERAL ARTS",
-]);
 const schoolCode = "0071007";
 const studentLoginDomain = "students.afastech.invalid";
 const passwordFirstCharacterAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -83,9 +76,10 @@ Deno.serve(async (request) => {
   }
 
   const academicYear = typeof input.academic_year === "string" ? input.academic_year.trim() : "";
+  const className = typeof input.class_name === "string" ? input.class_name.trim() : "";
   const makeCurrent = input.make_current === true;
-  if (!academicYear || input.class_name !== "SHS 3") {
-    return response({ error: "Choose an academic year for the SHS 3 roster." }, 400, requestOrigin);
+  if (!academicYear || !/^SHS [1-3]$/i.test(className)) {
+    return response({ error: "Choose an academic year and an SHS class from SHS 1 to SHS 3." }, 400, requestOrigin);
   }
   if (!Array.isArray(input.students) || input.students.length === 0 || input.students.length > 500) {
     return response({ error: "The roster must contain between 1 and 500 students." }, 400, requestOrigin);
@@ -125,11 +119,11 @@ Deno.serve(async (request) => {
     if (!/^[A-Z0-9]{12}$/.test(indexNumber)) {
       return response({ error: `Roster row ${index + 1} has an invalid CassRefID.` }, 400, requestOrigin);
     }
-    if (!allowedLearningAreas.has(learningArea)) {
-      return response({ error: `Roster row ${index + 1} has an unsupported learning area.` }, 400, requestOrigin);
+    if (!learningArea || learningArea.length > 120) {
+      return response({ error: `Roster row ${index + 1} has an invalid learning area or programme.` }, 400, requestOrigin);
     }
-    if (yearOfEntry !== "2024") {
-      return response({ error: `Roster row ${index + 1} is not from the 2024 entry cohort.` }, 400, requestOrigin);
+    if (!/^(19|20|21)\d{2}$/.test(yearOfEntry)) {
+      return response({ error: `Roster row ${index + 1} has an invalid year of entry.` }, 400, requestOrigin);
     }
     if (seenIndexNumbers.has(indexNumber)) {
       return response({ error: `CassRefID values must be unique; duplicate found on roster row ${index + 1}.` }, 400, requestOrigin);
@@ -243,6 +237,7 @@ Deno.serve(async (request) => {
       user_metadata: {
         full_name: student.full_name,
         student_index: student.index_number,
+        year_of_entry: student.year_of_entry,
       },
     });
     if (createError || !created.user) {
@@ -277,7 +272,7 @@ Deno.serve(async (request) => {
 
   const { error: importError } = await admin.rpc("service_import_student_records", {
     target_year_name: academicYear,
-    target_class_name: "SHS 3",
+    target_class_name: className,
     target_make_current: makeCurrent,
     target_students: students.map((student, index) => ({
       profile_id: createdUsers[index].id,
@@ -297,7 +292,7 @@ Deno.serve(async (request) => {
   return response({
     imported: credentials.length,
     academic_year: academicYear,
-    class_name: "SHS 3",
+    class_name: className,
     credentials,
   }, 201, requestOrigin);
 });
