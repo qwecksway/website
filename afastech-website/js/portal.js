@@ -149,6 +149,8 @@
       document.querySelector("[data-student-personal-residency]").textContent = record.residency || "Not set";
     }
 
+    if (window.AfastechFees) window.AfastechFees.renderStudent(client);
+
     var weekdays = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     renderRows(document.getElementById("student-timetable"), results[1].data || [], [
       function (row) { return weekdays[row.weekday] || ""; },
@@ -506,7 +508,12 @@
           "success"
         );
       });
-      action.appendChild(button);
+      var statementButton = document.createElement("button");
+      statementButton.className = "btn btn-primary";
+      statementButton.type = "button";
+      statementButton.textContent = "Fee statement";
+      statementButton.addEventListener("click", function () { window.AfastechFees.openEditor(client, record); });
+      action.append(button, statementButton);
       row.append(name, house, status, action);
       status.appendChild(input);
       tbody.appendChild(row);
@@ -1373,8 +1380,13 @@ if (typeof window.initializeTranscriptImporter === "function") {
           );
         }
       });
+      var statementButton = document.createElement("button");
+      statementButton.className = "btn btn-primary";
+      statementButton.type = "button";
+      statementButton.textContent = "Fee statement";
+      statementButton.addEventListener("click", function () { window.AfastechFees.openEditor(client, record); });
       status.appendChild(input);
-      actions.appendChild(button);
+      actions.append(button, statementButton);
       row.append(name, house, status, actions);
       tbody.appendChild(row);
     });
@@ -1875,6 +1887,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
       }, function (payload) {
         var fees = document.querySelector("[data-student-fees]");
         if (fees) fees.textContent = payload.new.fees_status || "Not set";
+        if (window.AfastechFees) window.AfastechFees.renderStudent(client);
       })
       .subscribe(function (status) {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
