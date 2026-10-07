@@ -2054,6 +2054,17 @@ if (typeof window.initializeTranscriptImporter === "function") {
       return;
     }
 
+    var expiresSoon = session.expires_at && session.expires_at * 1000 < Date.now() + 60000;
+    if (expiresSoon) {
+      var refreshed = await client.auth.refreshSession();
+      if (refreshed.error || !refreshed.data || !refreshed.data.session) {
+        await client.auth.signOut({ scope: "local" });
+        window.location.replace(LOGIN_PAGES[requiredRole]);
+        return;
+      }
+      session = refreshed.data.session;
+    }
+
     try {
       var profile = await getProfile(client, session.user.id);
       if (!profile || !profile.role) {
@@ -2085,6 +2096,11 @@ if (typeof window.initializeTranscriptImporter === "function") {
       }
     } catch (error) {
       console.error("Portal dashboard failed to load.", error);
+      if (error && /jwt expired/i.test(String(error.message || error))) {
+        await client.auth.signOut({ scope: "local" });
+        window.location.replace(LOGIN_PAGES[requiredRole]);
+        return;
+      }
       showAlert(alertBox, "Portal data could not be loaded (" + (error && error.message ? error.message : "unknown error") + "). Please refresh or contact the site administrator.", "error");
     }
   }
