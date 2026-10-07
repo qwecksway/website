@@ -5006,3 +5006,34 @@ body[data-page="admin-dashboard"] .dashboard-menu-toggle span {
 @media (prefers-reduced-motion: reduce) {
   body[data-page="admin-dashboard"] .dash-grid > nav { transition: none; }
 }
+
+body[data-page="admin-dashboard"] .dash-nav .dash-nav-sub a {
+  min-height: 34px;
+  margin-left: 29px;
+  padding: 7px 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0 8px 8px 0;
+  color: #8fa0b8;
+  font-size: 0.76rem;
+}
+
+body[data-page="admin-dashboard"] .dash-nav .dash-nav-sub a.active {
+  background: rgba(35, 95, 208, 0.9);
+  color: #fff;
+}
+
+body[data-page="admin-dashboard"] .admin-empty {
+  max-width: 640px;
+  padding: 1.4rem 1.5rem;
+}
+
+body[data-page="admin-dashboard"] .admin-empty h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+body[data-page="admin-dashboard"] .admin-empty p {
+  margin: 0;
+  color: var(--workspace-muted);
+  font-size: 0.85rem;
+}

@@ -529,15 +529,17 @@
     var profiles = results[0].data || [];
     var houses = results[1].data || [];
     document.querySelector("[data-admin-total]").textContent = String(profiles.length);
-    document.querySelector("[data-admin-staff-count]").textContent = String(
-      profiles.filter(function (profile) { return profile.role === "staff"; }).length
-    );
-    var studentCount = document.querySelector("[data-admin-student-count]");
-    if (studentCount) {
-      studentCount.textContent = String(
-        profiles.filter(function (profile) { return profile.role === "student"; }).length
-      );
-    }
+    var staffTotal = String(profiles.filter(function (profile) { return profile.role === "staff"; }).length);
+    var studentTotal = String(profiles.filter(function (profile) { return profile.role === "student"; }).length);
+    [
+      ["[data-admin-staff-count]", staffTotal],
+      ["[data-report-staff]", staffTotal],
+      ["[data-admin-student-count]", studentTotal],
+      ["[data-report-students]", studentTotal]
+    ].forEach(function (pair) {
+      var el = document.querySelector(pair[0]);
+      if (el) el.textContent = pair[1];
+    });
     renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client);
     renderAdminHouseControls(client, results[3].data || [], houses);
     renderAdminStaffDetails(client, results[4].data || []);
