@@ -68,17 +68,41 @@
         <section class="student-panel student-personal-panel">
           <div class="student-panel-heading">
             <div><p class="student-eyebrow">YOUR SCHOOL RECORD</p><h2>Personal details</h2></div>
-            <span class="student-panel-note">Managed by the school</span>
+            <span class="student-panel-note">Some details are locked</span>
           </div>
-          <dl class="student-personal-grid">
-            <div><dt>Full name</dt><dd data-student-full-name>Not set</dd></div>
-            <div><dt>Sign-in ID / email</dt><dd data-student-email>Not set</dd></div>
-            <div><dt>Index number</dt><dd data-student-personal-index>Not set</dd></div>
-            <div><dt>Class</dt><dd data-student-personal-class>Not set</dd></div>
-            <div><dt>Programme</dt><dd data-student-personal-programme>Not set</dd></div>
-            <div><dt>Residency</dt><dd data-student-personal-residency>Not set</dd></div>
-          </dl>
-          <p class="student-personal-note">If any of these details are incorrect, contact the school office to update your official record.</p>
+          <div class="sp-layout">
+            <div class="sp-photo-col">
+              <img id="sp-photo" class="sp-photo" alt="Your passport photograph" hidden>
+              <div id="sp-photo-empty" class="sp-photo sp-photo-empty">No photo</div>
+              <small>Passport photo is managed by the school office.</small>
+            </div>
+            <div class="sp-main">
+              <h3 class="sp-subhead">Locked details</h3>
+              <dl class="student-personal-grid">
+                <div><dt>First name</dt><dd data-sp-first>Not set</dd></div>
+                <div><dt>Other names</dt><dd data-sp-other>Not set</dd></div>
+                <div><dt>Last name</dt><dd data-sp-last>Not set</dd></div>
+                <div><dt>Date of birth</dt><dd data-sp-dob>Not set</dd></div>
+                <div><dt>Index number (CassRefID)</dt><dd data-student-personal-index>Not set</dd></div>
+                <div><dt>Class</dt><dd data-student-personal-class>Not set</dd></div>
+                <div><dt>Programme</dt><dd data-student-personal-programme>Not set</dd></div>
+                <div><dt>Residency</dt><dd data-student-personal-residency>Not set</dd></div>
+                <div><dt>Sign-in ID / email</dt><dd data-student-email>Not set</dd></div>
+              </dl>
+              <h3 class="sp-subhead">Details you can update</h3>
+              <form id="sp-form" class="sp-form" novalidate>
+                <div class="field"><label for="sp-gender">Gender</label>
+                  <select id="sp-gender"><option value="">Not set</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                <div class="field"><label for="sp-pob">Place of birth</label><input id="sp-pob" type="text" maxlength="120"></div>
+                <div class="field"><label for="sp-hometown">Hometown</label><input id="sp-hometown" type="text" maxlength="120"></div>
+                <div class="field"><label for="sp-guardian">Name of guardian</label><input id="sp-guardian" type="text" maxlength="120"></div>
+                <div class="field"><label for="sp-contact">Guardian contact</label><input id="sp-contact" type="tel" maxlength="30" placeholder="e.g. 0244 000 000"></div>
+                <div class="sp-actions"><button class="btn btn-primary" type="submit">Save changes</button></div>
+              </form>
+              <p id="sp-status" class="alert" role="status"></p>
+              <p class="student-personal-note">Locked details can only be changed by the school office. Contact the office if any of them are incorrect.</p>
+            </div>
+          </div>
         </section>
         </section>
 
@@ -214,6 +238,7 @@
 <script src="js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/student-records.js"></script>
 <script src="js/portal.js"></script>
 </body>
 </html>

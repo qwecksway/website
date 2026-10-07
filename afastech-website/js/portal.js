@@ -561,7 +561,10 @@
       ["fee records", function () { renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client); }],
       ["house controls", function () { renderAdminHouseControls(client, results[3].data || [], houses); }],
       ["staff details", function () { renderAdminStaffDetails(client, results[4].data || []); }],
-      ["student details", function () { renderAdminStudentDetails(client, results[5].data || []); }]
+      ["student records", function () {
+        window.AfastechStudents.initAdmin(client);
+        window.AfastechStudents.setRecords(results[5].data || []);
+      }]
     ].forEach(function (step) {
       try { step[1](); } catch (error) {
         console.error("Admin dashboard section failed to render: " + step[0], error);
@@ -745,87 +748,6 @@
       departmentCell.appendChild(departmentSelect);
       actionCell.appendChild(save);
       row.append(identity, titleCell, departmentCell, actionCell);
-      tbody.appendChild(row);
-    });
-  }
-
-  function renderAdminStudentDetails(client, students) {
-    var tbody = document.getElementById("admin-student-details");
-    tbody.replaceChildren();
-    if (!students.length) {
-      appendMessageRow(tbody, 6, "No student accounts are available.");
-      return;
-    }
-
-    students.forEach(function (student) {
-      var row = document.createElement("tr");
-      var nameCell = document.createElement("td");
-      var nameInput = document.createElement("input");
-      var email = document.createElement("small");
-      var fields = [
-        { value: student.index_number, label: "CassRefID", maxLength: 12, required: true },
-        { value: student.programme, label: "Programme", maxLength: 120, required: true },
-        { value: student.residency, label: "Residency", maxLength: 80, required: false },
-        { value: student.form_class, label: "Class", maxLength: 40, required: false }
-      ];
-      var inputs = fields.map(function (field) {
-        var input = document.createElement("input");
-        input.type = "text";
-        input.value = field.value || "";
-        input.maxLength = field.maxLength;
-        input.required = field.required;
-        input.setAttribute("aria-label", field.label + " for " + (student.full_name || "student"));
-        return input;
-      });
-      var saveCell = document.createElement("td");
-      var save = document.createElement("button");
-
-      nameInput.type = "text";
-      nameInput.maxLength = 120;
-      nameInput.required = true;
-      nameInput.value = student.full_name || "";
-      nameInput.setAttribute("aria-label", "Name for " + (student.email || "student"));
-      nameInput.className = "admin-record-name";
-      email.textContent = student.email || "No email";
-      nameCell.append(nameInput, email);
-      save.className = "btn btn-outline";
-      save.type = "button";
-      save.textContent = "Save";
-      save.addEventListener("click", async function () {
-        if (!nameInput.reportValidity() || inputs.some(function (input) {
-          return !input.reportValidity();
-        })) return;
-        save.disabled = true;
-        try {
-          var update = await client.rpc("admin_update_student_details", {
-            target_student_id: student.id,
-            target_full_name: nameInput.value.trim(),
-            target_index_number: inputs[0].value.trim(),
-            target_programme: inputs[1].value.trim(),
-            target_residency: inputs[2].value.trim(),
-            target_form_class: inputs[3].value.trim()
-          });
-          if (update.error) throw update.error;
-          showAlert(document.getElementById("portal-data-alert"), "Student record saved to the database.", "success");
-        } catch (error) {
-          save.disabled = false;
-          showAlert(document.getElementById("portal-data-alert"), "Student record could not be saved. Check the required fields and connection, then try again.", "error");
-          return;
-        }
-        try {
-          await loadAdminDashboard(client);
-        } catch (error) {
-          showAlert(document.getElementById("portal-data-alert"), "The student record was saved, but the account list could not be refreshed. Reload the page.", "error");
-        }
-      });
-      row.appendChild(nameCell);
-      inputs.forEach(function (input) {
-        var cell = document.createElement("td");
-        cell.appendChild(input);
-        row.appendChild(cell);
-      });
-      saveCell.appendChild(save);
-      row.appendChild(saveCell);
       tbody.appendChild(row);
     });
   }
@@ -1636,15 +1558,49 @@ if (typeof window.initializeTranscriptImporter === "function") {
     var headers = parseDelimitedLine(lines[0], delimiter).map(function (header) {
       return header.toLowerCase().replace(/[^a-z0-9]/g, "");
     });
+    function columnOf(aliases) {
+      for (var i = 0; i < aliases.length; i += 1) {
+        var found = headers.indexOf(aliases[i]);
+        if (found >= 0) return found;
+      }
+      return -1;
+    }
     var columnIndexes = {
-      school_code: headers.indexOf("schoolcode"),
-      full_name: headers.indexOf("name"),
-      index_number: headers.indexOf("cassrefid"),
-      learning_area: headers.indexOf("learningarea"),
-      year_of_entry: headers.indexOf("yearofentry")
+      school_code: columnOf(["schoolcode"]),
+      full_name: columnOf(["name", "fullname"]),
+      index_number: columnOf(["cassrefid"]),
+      learning_area: columnOf(["learningarea"]),
+      year_of_entry: columnOf(["yearofentry"])
     };
-    if (Object.keys(columnIndexes).some(function (key) { return columnIndexes[key] < 0; })) {
-      throw new Error("Required columns are School Code, Name, CassRefID, LEARNING_AREA, and YearOfEntry.");
+    var optionalIndexes = {
+      first_name: columnOf(["firstname"]),
+      other_names: columnOf(["othernames", "othername", "middlename", "middlenames"]),
+      last_name: columnOf(["lastname", "surname"]),
+      date_of_birth: columnOf(["dateofbirth", "dob"]),
+      gender: columnOf(["gender", "sex"]),
+      place_of_birth: columnOf(["placeofbirth"]),
+      hometown: columnOf(["hometown"]),
+      guardian_name: columnOf(["guardian", "guardianname", "nameofguardian"]),
+      guardian_contact: columnOf(["guardiancontact", "contact", "guardianphone"])
+    };
+    var hasSplitName = optionalIndexes.first_name >= 0 && optionalIndexes.last_name >= 0;
+    var missing = Object.keys(columnIndexes).some(function (key) {
+      return columnIndexes[key] < 0 && !(key === "full_name" && hasSplitName);
+    });
+    if (missing) {
+      throw new Error("Required columns are School Code, CassRefID, LEARNING_AREA, YearOfEntry, and either Name or both First Name and Last Name.");
+    }
+
+    function normalizeDate(value, rowNumber) {
+      var text = String(value || "").trim();
+      if (!text) return "";
+      var iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      var dmy = text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+      var year, month, day;
+      if (iso) { year = iso[1]; month = iso[2]; day = iso[3]; }
+      else if (dmy) { year = dmy[3]; month = dmy[2]; day = dmy[1]; }
+      else throw new Error("Roster row " + rowNumber + " has a date of birth that is not YYYY-MM-DD or DD/MM/YYYY.");
+      return year + "-" + ("0" + month).slice(-2) + "-" + ("0" + day).slice(-2);
     }
 
     return lines.slice(1).map(function (line, index) {
@@ -1654,8 +1610,12 @@ if (typeof window.initializeTranscriptImporter === "function") {
       }
       var student = {};
       Object.keys(columnIndexes).forEach(function (key) {
-        student[key] = values[columnIndexes[key]];
+        student[key] = columnIndexes[key] >= 0 ? values[columnIndexes[key]] : "";
       });
+      Object.keys(optionalIndexes).forEach(function (key) {
+        if (optionalIndexes[key] >= 0) student[key] = values[optionalIndexes[key]];
+      });
+      if (student.date_of_birth) student.date_of_birth = normalizeDate(student.date_of_birth, index + 2);
       return student;
     });
   }
@@ -1730,24 +1690,25 @@ if (typeof window.initializeTranscriptImporter === "function") {
     async function createStudentAccounts(students, className, submitForm) {
       if (pendingCredentials.length) {
         showAlert(status, "Download the previous credential file before starting another import.", "error");
-        return false;
+        return null;
       }
       var academicYear = document.getElementById("admin-student-import-year").value;
       var makeCurrent = document.getElementById("admin-student-import-current").checked;
       if (students.length > 500) {
         showAlert(status, "Create no more than 500 student accounts at a time.", "error");
-        return false;
+        return null;
       }
       if (!academicYear) {
         showAlert(status, "Choose an academic year before creating accounts.", "error");
-        return false;
+        return null;
       }
       var confirmed = window.confirm(
         "Create " + students.length + " student account(s) in " + className + " for " + academicYear +
         " and generate a different temporary password for each student? The credentials will be downloadable only once."
       );
-      if (!confirmed) return false;
+      if (!confirmed) return null;
 
+      var importResult = null;
       var button = submitForm.querySelector("button[type='submit']");
       button.disabled = true;
       showAlert(status, "Creating student accounts and academic enrolments…", "success");
@@ -1764,6 +1725,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
           var functionMessage = result.data && result.data.error;
           throw new Error(functionMessage || "Student roster import failed. No credentials were issued.");
         }
+        importResult = result.data;
         pendingCredentials = result.data.credentials;
         pendingYear = result.data.academic_year;
         pendingClass = result.data.class_name;
@@ -1786,11 +1748,11 @@ if (typeof window.initializeTranscriptImporter === "function") {
         }
       } catch (error) {
         showAlert(status, error.message || "Student account creation failed. Check the details and try again.", "error");
-        return false;
+        return null;
       } finally {
         button.disabled = false;
       }
-      return pendingCredentials.length > 0;
+      return importResult;
     }
 
     form.addEventListener("submit", async function (event) {
@@ -1817,20 +1779,57 @@ if (typeof window.initializeTranscriptImporter === "function") {
     var singleForm = document.getElementById("admin-student-single-form");
     singleForm.addEventListener("submit", async function (event) {
       event.preventDefault();
+      function field(id) { return document.getElementById(id).value.trim(); }
       var student = {
         school_code: "0071007",
-        full_name: document.getElementById("admin-student-single-name").value.trim(),
-        index_number: document.getElementById("admin-student-single-index").value.trim(),
-        learning_area: document.getElementById("admin-student-single-programme").value.trim(),
+        first_name: field("admin-student-single-first"),
+        other_names: field("admin-student-single-other"),
+        last_name: field("admin-student-single-last"),
+        date_of_birth: field("admin-student-single-dob"),
+        gender: field("admin-student-single-gender"),
+        place_of_birth: field("admin-student-single-pob"),
+        hometown: field("admin-student-single-hometown"),
+        guardian_name: field("admin-student-single-guardian"),
+        guardian_contact: field("admin-student-single-contact"),
+        index_number: field("admin-student-single-index"),
+        learning_area: field("admin-student-single-programme"),
         year_of_entry: document.getElementById("admin-student-single-entry-year").value
       };
       var className = document.getElementById("admin-student-single-class").value;
-      if (!student.full_name || !student.index_number || !student.learning_area || !student.year_of_entry || !className) {
-        showAlert(status, "Enter the student's name, CassRefID, learning area, entry year, and class.", "error");
+      if (!student.first_name || !student.last_name || !student.date_of_birth || !student.gender ||
+        !student.index_number || !student.learning_area || !student.year_of_entry || !className) {
+        showAlert(status, "Enter the first and last name, date of birth, gender, CassRefID, learning area, entry year, and class.", "error");
         return;
       }
+      if (student.guardian_contact && !/^[0-9+ ()-]{7,30}$/.test(student.guardian_contact)) {
+        showAlert(status, "Enter a valid guardian contact number.", "error");
+        return;
+      }
+      var photoInput = document.getElementById("admin-student-single-photo");
+      var photo = photoInput.files && photoInput.files[0];
+      if (photo) {
+        var photoProblem = window.AfastechStudents.validatePhoto(photo);
+        if (photoProblem) {
+          showAlert(status, photoProblem, "error");
+          return;
+        }
+      }
       var imported = await createStudentAccounts([student], className, singleForm);
-      if (imported) singleForm.reset();
+      if (!imported) return;
+      var photoNote = "";
+      if (photo && imported.credentials[0] && imported.credentials[0].profile_id) {
+        try {
+          await window.AfastechStudents.uploadPhoto(client, imported.credentials[0].profile_id, photo);
+        } catch (photoError) {
+          photoNote = " The photograph could not be uploaded (" + (photoError.message || "unknown error") +
+            "); add it from the student's record.";
+        }
+      }
+      singleForm.reset();
+      if (photoNote) {
+        showAlert(status, "Student created. Download the one-time credential file now." + photoNote, "error");
+      }
+      try { await loadAdminDashboard(client); } catch (refreshError) { /* the import already refreshed */ }
     });
   }
 
@@ -2082,6 +2081,12 @@ if (typeof window.initializeTranscriptImporter === "function") {
       initializeDashboardNavigation();
       if (requiredRole === "student") {
         await loadStudentDashboard(client, session.user.id);
+        try {
+          await window.AfastechStudents.initStudent(client, session.user.id);
+        } catch (detailsError) {
+          console.error("Personal details failed to load.", detailsError);
+          showAlert(alertBox, "Your personal details could not be loaded (" + (detailsError.message || "unknown error") + ").", "error");
+        }
         watchStudentFeeChanges(client, session.user.id);
         initializePasswordChange(client, "student-password-form", "student-password-status");
       }

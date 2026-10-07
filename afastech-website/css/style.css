@@ -5037,3 +5037,35 @@ body[data-page="admin-dashboard"] .admin-empty p {
   color: var(--workspace-muted);
   font-size: 0.85rem;
 }
+/* Student records (admin) and personal details (student) */
+.sr-card { margin-bottom: 1.5rem; }
+.sr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.sr-head h2 { margin: 0 0 .25rem; }
+.sr-head p { margin: 0; max-width: 60ch; }
+.sr-search { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1rem; }
+.sr-search .field { flex: 1 1 220px; margin: 0; }
+.sr-search-actions { display: flex; gap: .5rem; }
+.sr-inline-fields { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+.sr-inline-fields .field { flex: 1 1 240px; }
+.sr-tabs { display: flex; gap: .5rem; border-bottom: 1px solid #dbe3f0; margin: 1rem 0; }
+.sr-tab { background: none; border: 0; padding: .7rem 1rem; font: inherit; font-weight: 600; color: #5a6a85; cursor: pointer; border-bottom: 3px solid transparent; }
+.sr-tab.is-active { color: #235fd0; border-bottom-color: #235fd0; }
+.sr-form { display: grid; gap: 1.25rem; }
+.sr-fields { border: 1px solid #dbe3f0; border-radius: 10px; padding: 1rem 1.25rem; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .25rem 1rem; }
+.sr-fields legend { padding: 0 .5rem; font-weight: 700; color: #101a2a; }
+.sr-fields .field { margin: 0 0 .75rem; }
+.sr-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+.sr-photo-block { display: grid; justify-items: start; gap: .5rem; }
+.sr-photo, .sp-photo { width: 120px; height: 150px; object-fit: cover; border-radius: 10px; border: 1px solid #dbe3f0; background: #f3f6fb; }
+.sr-photo-empty, .sp-photo-empty { display: grid; place-items: center; color: #7a89a3; font-size: .85rem; }
+.sr-photo[hidden], .sp-photo[hidden] { display: none; }
+.sr-photo-button { cursor: pointer; }
+.sp-layout { display: grid; grid-template-columns: 160px 1fr; gap: 1.5rem; }
+.sp-photo-col { display: grid; gap: .5rem; align-content: start; justify-items: start; }
+.sp-photo { width: 140px; height: 175px; }
+.sp-subhead { margin: 1.25rem 0 .5rem; font-size: 1rem; }
+.sp-subhead:first-child { margin-top: 0; }
+.sp-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .25rem 1rem; }
+.sp-form .field { margin: 0 0 .75rem; }
+.sp-actions { grid-column: 1 / -1; }
+@media (max-width: 700px) { .sp-layout { grid-template-columns: 1fr; } }

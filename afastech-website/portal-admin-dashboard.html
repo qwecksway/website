@@ -78,81 +78,176 @@
         <p class="dashboard-overview-note">Choose a section from the menu to manage students, staff access, academics, houses, or fee records.</p>
         </section>
         <section id="view-students" class="dashboard-view" data-dashboard-view hidden>
-        <section id="student-import" class="card" style="margin-bottom:2.5rem;">
-          <h2>Register students</h2>
-          <p>Load a batch roster or create one student account. Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
-          <div class="field">
-            <label for="admin-student-import-year">Academic year</label>
-            <select id="admin-student-import-year" required>
-              <option value="">Loading academic years…</option>
-            </select>
+        <section class="card sr-card" aria-labelledby="sr-heading">
+          <div class="sr-head">
+            <div>
+              <h2 id="sr-heading">Students</h2>
+              <p>Search for a student to view or correct their record. Changes appear in the student's portal straight away.</p>
+            </div>
+            <button id="sr-add-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="student-import">+ Add student</button>
           </div>
-          <div class="field">
-            <label for="admin-student-import-current">
-              <input type="checkbox" id="admin-student-import-current" checked>
-              Make this the current academic year
-            </label>
-          </div>
-          <h3>Load a batch</h3>
-          <p>Use a CSV or tab-separated roster with columns <strong>School Code, Name, CassRefID, LEARNING_AREA, YearOfEntry</strong>.</p>
-          <form id="admin-student-import-form">
+          <form id="sr-search-form" class="sr-search" role="search">
             <div class="field">
-              <label for="admin-student-import-class">Class</label>
-              <select id="admin-student-import-class" required>
-                <option value="">Choose class</option>
-                <option value="SHS 1">SHS 1</option>
-                <option value="SHS 2">SHS 2</option>
-                <option value="SHS 3">SHS 3</option>
-              </select>
+              <label for="sr-search-name">First name or last name</label>
+              <input id="sr-search-name" type="search" maxlength="80" autocomplete="off" placeholder="e.g. Ama or Mensah">
             </div>
             <div class="field">
-              <label for="admin-student-import-data">Student roster (CSV or tab-separated)</label>
-              <input type="file" id="admin-student-import-file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
-              <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="School Code&#9;Name&#9;CassRefID&#9;LEARNING_AREA&#9;YearOfEntry"></textarea>
+              <label for="sr-search-dob">Date of birth</label>
+              <input id="sr-search-dob" type="date">
             </div>
-            <button class="btn btn-primary" type="submit">Create batch accounts</button>
+            <div class="sr-search-actions">
+              <button class="btn btn-primary" type="submit">Search</button>
+              <button id="sr-search-all" class="btn btn-outline" type="button">Show all</button>
+            </div>
           </form>
-          <h3>Create an individual student account</h3>
-          <form id="admin-student-single-form">
-            <div class="field">
-              <label for="admin-student-single-class">Class</label>
-              <select id="admin-student-single-class" required>
-                <option value="">Choose class</option>
-                <option value="SHS 1">SHS 1</option>
-                <option value="SHS 2">SHS 2</option>
-                <option value="SHS 3">SHS 3</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="admin-student-single-name">Full name</label>
-              <input id="admin-student-single-name" type="text" maxlength="120" autocomplete="name" required>
-            </div>
-            <div class="field">
-              <label for="admin-student-single-index">CassRefID / index number</label>
-              <input id="admin-student-single-index" type="text" maxlength="12" autocomplete="off" required>
-            </div>
-            <div class="field">
-              <label for="admin-student-single-programme">Learning area / programme</label>
-              <input id="admin-student-single-programme" type="text" maxlength="120" required>
-            </div>
-            <div class="field">
-              <label for="admin-student-single-entry-year">Year of entry</label>
-              <input id="admin-student-single-entry-year" type="number" min="1900" max="2199" step="1" required>
-            </div>
-            <button class="btn btn-outline" type="submit">Create individual account</button>
-          </form>
-          <p id="admin-student-import-status" class="alert" role="status" style="margin-top:1rem;"></p>
-          <button id="admin-student-import-download" class="btn btn-outline" type="button" hidden>Download one-time student credentials</button>
-        </section>
-        <section class="card" aria-labelledby="admin-student-records-heading">
-          <h2 id="admin-student-records-heading">Edit student records</h2>
-          <p>Update each student’s name, CassRefID, programme, residency, or class. Save a row to commit changes directly to the database.</p>
+          <p id="sr-search-status" class="alert" role="status"></p>
           <div style="overflow-x:auto;">
             <table class="data-table">
-              <thead><tr><th>Student</th><th>CassRefID</th><th>Programme</th><th>Residency</th><th>Class</th><th>Save</th></tr></thead>
-              <tbody id="admin-student-details"></tbody>
+              <thead><tr><th>Student</th><th>CassRefID</th><th>Class</th><th>Date of birth</th><th>Action</th></tr></thead>
+              <tbody id="sr-results"></tbody>
             </table>
           </div>
+        </section>
+
+        <section id="sr-editor" class="card sr-card" aria-labelledby="sr-editor-heading" hidden>
+          <div class="sr-head">
+            <div>
+              <h2 id="sr-editor-heading">Edit student record</h2>
+              <p id="sr-editor-sub">Correct any detail, then save. The student sees the update immediately.</p>
+            </div>
+            <button id="sr-editor-close" class="btn btn-outline" type="button">Close</button>
+          </div>
+          <form id="sr-edit-form" class="sr-form" novalidate>
+            <div class="sr-photo-block">
+              <img id="sr-edit-photo" class="sr-photo" alt="Passport photograph" hidden>
+              <div id="sr-edit-photo-empty" class="sr-photo sr-photo-empty">No photo</div>
+              <label class="btn btn-outline sr-photo-button" for="sr-edit-photo-file">Upload passport photo</label>
+              <input id="sr-edit-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <small>JPEG, PNG or WebP, up to 2 MB. Uploaded immediately.</small>
+            </div>
+            <fieldset class="sr-fields">
+              <legend>Candidate name</legend>
+              <div class="field"><label for="sr-edit-first">First name</label><input id="sr-edit-first" type="text" maxlength="60" required></div>
+              <div class="field"><label for="sr-edit-other">Other names</label><input id="sr-edit-other" type="text" maxlength="80"></div>
+              <div class="field"><label for="sr-edit-last">Last name</label><input id="sr-edit-last" type="text" maxlength="60" required></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Personal details</legend>
+              <div class="field"><label for="sr-edit-dob">Date of birth</label><input id="sr-edit-dob" type="date" required></div>
+              <div class="field"><label for="sr-edit-gender">Gender</label>
+                <select id="sr-edit-gender"><option value="">Not set</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+              <div class="field"><label for="sr-edit-pob">Place of birth</label><input id="sr-edit-pob" type="text" maxlength="120"></div>
+              <div class="field"><label for="sr-edit-hometown">Hometown</label><input id="sr-edit-hometown" type="text" maxlength="120"></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Guardian</legend>
+              <div class="field"><label for="sr-edit-guardian">Name of guardian</label><input id="sr-edit-guardian" type="text" maxlength="120"></div>
+              <div class="field"><label for="sr-edit-contact">Contact</label><input id="sr-edit-contact" type="tel" maxlength="30" placeholder="e.g. 0244 000 000"></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>School record</legend>
+              <div class="field"><label for="sr-edit-index">CassRefID / index number</label><input id="sr-edit-index" type="text" maxlength="12" required></div>
+              <div class="field"><label for="sr-edit-class">Class</label><input id="sr-edit-class" type="text" maxlength="40"></div>
+              <div class="field"><label for="sr-edit-programme">Programme / learning area</label><input id="sr-edit-programme" type="text" maxlength="120" required></div>
+              <div class="field"><label for="sr-edit-residency">Residency</label><input id="sr-edit-residency" type="text" maxlength="80"></div>
+            </fieldset>
+            <div class="sr-actions">
+              <button class="btn btn-primary" type="submit">Save changes</button>
+              <button id="sr-edit-cancel" class="btn btn-outline" type="button">Cancel</button>
+            </div>
+          </form>
+          <p id="sr-edit-status" class="alert" role="status"></p>
+        </section>
+
+        <section id="student-import" class="card sr-card" aria-labelledby="sr-add-heading" hidden>
+          <div class="sr-head">
+            <div>
+              <h2 id="sr-add-heading">Add students</h2>
+              <p>Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
+            </div>
+          </div>
+          <div class="sr-inline-fields">
+            <div class="field">
+              <label for="admin-student-import-year">Academic year</label>
+              <select id="admin-student-import-year" required>
+                <option value="">Loading academic years…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="admin-student-import-current">
+                <input type="checkbox" id="admin-student-import-current" checked>
+                Make this the current academic year
+              </label>
+            </div>
+          </div>
+          <div class="sr-tabs" role="tablist" aria-label="How to add students">
+            <button id="sr-tab-single" class="sr-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="admin-student-single-form">Add one student</button>
+            <button id="sr-tab-bulk" class="sr-tab" type="button" role="tab" aria-selected="false" aria-controls="sr-bulk-panel">Bulk upload</button>
+          </div>
+
+          <form id="admin-student-single-form" class="sr-form" role="tabpanel">
+            <fieldset class="sr-fields">
+              <legend>Candidate name</legend>
+              <div class="field"><label for="admin-student-single-first">First name</label><input id="admin-student-single-first" type="text" maxlength="60" required></div>
+              <div class="field"><label for="admin-student-single-other">Other names</label><input id="admin-student-single-other" type="text" maxlength="80"></div>
+              <div class="field"><label for="admin-student-single-last">Last name</label><input id="admin-student-single-last" type="text" maxlength="60" required></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Personal details</legend>
+              <div class="field"><label for="admin-student-single-dob">Date of birth</label><input id="admin-student-single-dob" type="date" required></div>
+              <div class="field"><label for="admin-student-single-gender">Gender</label>
+                <select id="admin-student-single-gender" required><option value="">Choose gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+              <div class="field"><label for="admin-student-single-pob">Place of birth</label><input id="admin-student-single-pob" type="text" maxlength="120"></div>
+              <div class="field"><label for="admin-student-single-hometown">Hometown</label><input id="admin-student-single-hometown" type="text" maxlength="120"></div>
+              <div class="field"><label for="admin-student-single-photo">Passport photograph</label><input id="admin-student-single-photo" type="file" accept="image/jpeg,image/png,image/webp"></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Guardian</legend>
+              <div class="field"><label for="admin-student-single-guardian">Name of guardian</label><input id="admin-student-single-guardian" type="text" maxlength="120"></div>
+              <div class="field"><label for="admin-student-single-contact">Contact</label><input id="admin-student-single-contact" type="tel" maxlength="30" placeholder="e.g. 0244 000 000"></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>School record</legend>
+              <div class="field">
+                <label for="admin-student-single-class">Class</label>
+                <select id="admin-student-single-class" required>
+                  <option value="">Choose class</option>
+                  <option value="SHS 1">SHS 1</option>
+                  <option value="SHS 2">SHS 2</option>
+                  <option value="SHS 3">SHS 3</option>
+                </select>
+              </div>
+              <div class="field"><label for="admin-student-single-index">CassRefID / index number</label><input id="admin-student-single-index" type="text" maxlength="12" autocomplete="off" required></div>
+              <div class="field"><label for="admin-student-single-programme">Learning area / programme</label><input id="admin-student-single-programme" type="text" maxlength="120" required></div>
+              <div class="field"><label for="admin-student-single-entry-year">Year of entry</label><input id="admin-student-single-entry-year" type="number" min="1900" max="2199" step="1" required></div>
+            </fieldset>
+            <div class="sr-actions"><button class="btn btn-primary" type="submit">Create student account</button></div>
+          </form>
+
+          <div id="sr-bulk-panel" role="tabpanel" hidden>
+            <p>Use a CSV or tab-separated roster. Required columns: <strong>School Code, CassRefID, LEARNING_AREA, YearOfEntry</strong>, plus either <strong>Name</strong> or <strong>First Name</strong> and <strong>Last Name</strong>. Optional columns: <strong>Other Names, DOB, Gender, Place of Birth, Hometown, Guardian, Guardian Contact</strong>. Dates may be YYYY-MM-DD or DD/MM/YYYY. Passport photos can be added afterwards from each student's record.</p>
+            <button id="sr-template-download" class="btn btn-outline" type="button">Download CSV template</button>
+            <form id="admin-student-import-form" style="margin-top:1rem;">
+              <div class="field">
+                <label for="admin-student-import-class">Class</label>
+                <select id="admin-student-import-class" required>
+                  <option value="">Choose class</option>
+                  <option value="SHS 1">SHS 1</option>
+                  <option value="SHS 2">SHS 2</option>
+                  <option value="SHS 3">SHS 3</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="admin-student-import-data">Student roster (CSV or tab-separated)</label>
+                <input type="file" id="admin-student-import-file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+                <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="School Code&#9;First Name&#9;Other Names&#9;Last Name&#9;CassRefID&#9;LEARNING_AREA&#9;YearOfEntry&#9;DOB&#9;Gender"></textarea>
+              </div>
+              <button class="btn btn-primary" type="submit">Create batch accounts</button>
+            </form>
+          </div>
+
+          <p id="admin-student-import-status" class="alert" role="status" style="margin-top:1rem;"></p>
+          <button id="admin-student-import-download" class="btn btn-outline" type="button" hidden>Download one-time student credentials</button>
         </section>
         </section>
         <section id="view-access" class="dashboard-view" data-dashboard-view hidden>
@@ -503,6 +598,7 @@
   window.pdfjsLib = pdfjsLib;
 </script>
 <script src="js/supabase-config.js"></script>
+<script src="js/student-records.js"></script>
 <script src="js/portal.js"></script>
 <script src="js/transcript-import.js"></script>
 </body>

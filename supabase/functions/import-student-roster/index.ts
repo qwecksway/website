@@ -90,7 +90,18 @@ Deno.serve(async (request) => {
     index_number: string;
     programme: string;
     year_of_entry: string;
+    first_name: string;
+    other_names: string;
+    last_name: string;
+    date_of_birth: string | null;
+    gender: string;
+    place_of_birth: string;
+    hometown: string;
+    guardian_name: string;
+    guardian_contact: string;
   }> = [];
+  const text = (value: unknown, max: number) =>
+    typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max + 1) : "";
   const seenIndexNumbers = new Set<string>();
   for (let index = 0; index < input.students.length; index += 1) {
     const student = input.students[index];
@@ -99,7 +110,23 @@ Deno.serve(async (request) => {
     }
     const row = student as Record<string, unknown>;
     const rowSchoolCode = typeof row.school_code === "string" ? row.school_code.trim() : "";
-    const fullName = typeof row.full_name === "string" ? row.full_name.trim() : "";
+    const firstName = text(row.first_name, 60);
+    const otherNames = text(row.other_names, 80);
+    const lastName = text(row.last_name, 60);
+    const dateOfBirth = text(row.date_of_birth, 10);
+    const genderInput = text(row.gender, 10).toLowerCase();
+    const placeOfBirth = text(row.place_of_birth, 120);
+    const hometown = text(row.hometown, 120);
+    const guardianName = text(row.guardian_name, 120);
+    const guardianContact = text(row.guardian_contact, 30);
+    const fullName = typeof row.full_name === "string" && row.full_name.trim()
+      ? row.full_name.trim()
+      : [firstName, otherNames, lastName].filter(Boolean).join(" ");
+    const gender = genderInput === "" ? "" : ["m", "male"].includes(genderInput)
+      ? "Male"
+      : ["f", "female"].includes(genderInput)
+      ? "Female"
+      : "invalid";
     const indexNumber = typeof row.index_number === "string"
       ? row.index_number.trim().toUpperCase()
       : "";
@@ -125,6 +152,28 @@ Deno.serve(async (request) => {
     if (!/^(19|20|21)\d{2}$/.test(yearOfEntry)) {
       return response({ error: `Roster row ${index + 1} has an invalid year of entry.` }, 400, requestOrigin);
     }
+    if (firstName.length > 60 || otherNames.length > 80 || lastName.length > 60) {
+      return response({ error: `Roster row ${index + 1} has a name that is too long.` }, 400, requestOrigin);
+    }
+    if (dateOfBirth) {
+      const parsed = new Date(`${dateOfBirth}T00:00:00Z`);
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) || Number.isNaN(parsed.getTime()) ||
+        parsed.toISOString().slice(0, 10) !== dateOfBirth || parsed > new Date() ||
+        parsed < new Date("1950-01-01T00:00:00Z")
+      ) {
+        return response({ error: `Roster row ${index + 1} has an invalid date of birth.` }, 400, requestOrigin);
+      }
+    }
+    if (gender === "invalid") {
+      return response({ error: `Roster row ${index + 1} has an invalid gender (use Male or Female).` }, 400, requestOrigin);
+    }
+    if (placeOfBirth.length > 120 || hometown.length > 120 || guardianName.length > 120) {
+      return response({ error: `Roster row ${index + 1} has a place or guardian name that is too long.` }, 400, requestOrigin);
+    }
+    if (guardianContact && !/^[0-9+ ()-]{7,30}$/.test(guardianContact)) {
+      return response({ error: `Roster row ${index + 1} has an invalid guardian contact number.` }, 400, requestOrigin);
+    }
     if (seenIndexNumbers.has(indexNumber)) {
       return response({ error: `CassRefID values must be unique; duplicate found on roster row ${index + 1}.` }, 400, requestOrigin);
     }
@@ -134,6 +183,15 @@ Deno.serve(async (request) => {
       index_number: indexNumber,
       programme: learningArea,
       year_of_entry: yearOfEntry,
+      first_name: firstName,
+      other_names: otherNames,
+      last_name: lastName,
+      date_of_birth: dateOfBirth || null,
+      gender,
+      place_of_birth: placeOfBirth,
+      hometown,
+      guardian_name: guardianName,
+      guardian_contact: guardianContact,
     });
   }
 
@@ -208,7 +266,7 @@ Deno.serve(async (request) => {
   }
 
   const createdUsers: Array<{ id: string }> = [];
-  const credentials: Array<{ index_number: string; full_name: string; temporary_password: string }> = [];
+  const credentials: Array<{ profile_id: string; index_number: string; full_name: string; temporary_password: string }> = [];
   async function rollbackCreatedUsers() {
     let complete = true;
     for (const user of createdUsers) {
@@ -264,6 +322,7 @@ Deno.serve(async (request) => {
       }, 500, requestOrigin);
     }
     credentials.push({
+      profile_id: created.user.id,
       index_number: student.index_number,
       full_name: student.full_name,
       temporary_password: password,
@@ -286,6 +345,28 @@ Deno.serve(async (request) => {
     console.error("Student academic records could not be saved.");
     return response({
       error: `Student account setup did not complete. ${rollbackMessage(rollbackComplete)}`,
+    }, 500, requestOrigin);
+  }
+
+  const { error: personalError } = await admin.rpc("service_apply_student_personal_details", {
+    target_students: students.map((student, index) => ({
+      profile_id: createdUsers[index].id,
+      first_name: student.first_name,
+      other_names: student.other_names,
+      last_name: student.last_name,
+      date_of_birth: student.date_of_birth,
+      gender: student.gender,
+      place_of_birth: student.place_of_birth,
+      hometown: student.hometown,
+      guardian_name: student.guardian_name,
+      guardian_contact: student.guardian_contact,
+    })),
+  });
+  if (personalError) {
+    const rollbackComplete = await rollbackCreatedUsers();
+    console.error("Student personal details could not be saved.");
+    return response({
+      error: `Student personal details could not be saved. ${rollbackMessage(rollbackComplete)}`,
     }, 500, requestOrigin);
   }
 
