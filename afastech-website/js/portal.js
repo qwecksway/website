@@ -557,10 +557,18 @@
       var el = document.querySelector(pair[0]);
       if (el) el.textContent = pair[1];
     });
-    renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client);
-    renderAdminHouseControls(client, results[3].data || [], houses);
-    renderAdminStaffDetails(client, results[4].data || []);
-    renderAdminStudentDetails(client, results[5].data || []);
+    [
+      ["fee records", function () { renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client); }],
+      ["house controls", function () { renderAdminHouseControls(client, results[3].data || [], houses); }],
+      ["staff details", function () { renderAdminStaffDetails(client, results[4].data || []); }],
+      ["student details", function () { renderAdminStudentDetails(client, results[5].data || []); }]
+    ].forEach(function (step) {
+      try { step[1](); } catch (error) {
+        console.error("Admin dashboard section failed to render: " + step[0], error);
+        showAlert(document.getElementById("portal-data-alert"),
+          "The " + step[0] + " section could not be displayed (" + (error && error.message ? error.message : error) + ").", "error");
+      }
+    });
 
     var tbody = document.getElementById("admin-profiles");
     tbody.replaceChildren();
@@ -2077,7 +2085,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
       }
     } catch (error) {
       console.error("Portal dashboard failed to load.", error);
-      showAlert(alertBox, "Portal data could not be loaded. Please refresh or contact the site administrator.", "error");
+      showAlert(alertBox, "Portal data could not be loaded (" + (error && error.message ? error.message : "unknown error") + "). Please refresh or contact the site administrator.", "error");
     }
   }
 
