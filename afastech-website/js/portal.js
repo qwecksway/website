@@ -523,8 +523,25 @@
       client.rpc("admin_list_staff_details"),
       client.rpc("admin_list_student_details")
     ]);
-    var error = results.find(function (result) { return result.error; });
-    if (error) throw error.error;
+    var rpcNames = [
+      "admin_list_profiles", "admin_list_houses", "list_house_fee_records",
+      "admin_list_house_assignable_people", "admin_list_staff_details", "admin_list_student_details"
+    ];
+    var failed = [];
+    results.forEach(function (result, index) {
+      if (!result.error) return;
+      failed.push(rpcNames[index]);
+      console.error("Admin dashboard query failed: " + rpcNames[index], result.error);
+    });
+    if (results[0].error) throw results[0].error;
+    if (failed.length) {
+      showAlert(
+        document.getElementById("portal-data-alert"),
+        "Some dashboard data could not be loaded (" + failed.join(", ") +
+          "). Apply the latest Supabase migrations (supabase db push) and reload.",
+        "error"
+      );
+    }
 
     var profiles = results[0].data || [];
     var houses = results[1].data || [];
@@ -2059,6 +2076,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
         initializeStudentImport(client);
       }
     } catch (error) {
+      console.error("Portal dashboard failed to load.", error);
       showAlert(alertBox, "Portal data could not be loaded. Please refresh or contact the site administrator.", "error");
     }
   }
