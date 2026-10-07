@@ -282,7 +282,7 @@
         target_first_name: byId("sr-edit-first").value,
         target_other_names: byId("sr-edit-other").value,
         target_last_name: byId("sr-edit-last").value,
-        target_date_of_birth: byId("sr-edit-dob").value,
+        target_date_of_birth: byId("sr-edit-dob").value || null,
         target_gender: byId("sr-edit-gender").value,
         target_index_number: byId("sr-edit-index").value,
         target_programme: byId("sr-edit-programme").value,
