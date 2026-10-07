@@ -322,7 +322,7 @@
         <section id="view-access" class="dashboard-view" data-dashboard-view hidden>
         <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
           <h2>Add a staff member or teacher</h2>
-          <p>Create the account directly in Supabase. The temporary password is not emailed. Share it with the staff member through a private channel and ask them to change it after their first sign-in.</p>
+          <p>New accounts are added as Teacher with the chosen department. Assign other job titles (House Master, Head of Department and so on) in the Staff job titles and departments table below. The temporary password is not emailed. Share it with the staff member through a private channel and ask them to change it after their first sign-in.</p>
           <form id="admin-staff-form">
             <div class="field">
               <label for="admin-staff-name">Full name</label>
@@ -333,20 +333,7 @@
               <input type="email" id="admin-staff-email" name="email" maxlength="254" autocomplete="email" required>
             </div>
             <div class="field">
-              <label for="admin-staff-position">Job titles (select all that apply)</label>
-              <select id="admin-staff-position" name="position" multiple required>
-                <option value="Teacher">Teacher</option>
-                <option value="House Master">House Master</option>
-                <option value="House Mistress">House Mistress</option>
-                <option value="Head of Department">Head of Department</option>
-                <option value="Assistant Head">Assistant Head</option>
-                <option value="Headteacher">Headteacher</option>
-                <option value="Non-Teaching Staff">Non-Teaching Staff</option>
-              </select>
-              <small>Select every applicable title. Use Ctrl on Windows or Command on Mac to select multiple titles.</small>
-            </div>
-            <div class="field">
-              <label for="admin-staff-department">Department (optional)</label>
+              <label for="admin-staff-department">Department</label>
               <select id="admin-staff-department" name="department">
                 <option value="">No department assigned</option>
                 <option value="MATHS/ICT">MATHS/ICT</option>

@@ -79,8 +79,10 @@ Deno.serve(async (request) => {
 
   const fullName = typeof input.full_name === "string" ? input.full_name.trim() : "";
   const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
-  const positions = Array.isArray(input.position)
-    ? input.position.filter((position): position is string => typeof position === "string")
+  // New accounts start as Teacher; job titles are maintained in the staff table afterwards.
+  const providedPositions = input.position === undefined ? ["Teacher"] : input.position;
+  const positions = Array.isArray(providedPositions)
+    ? providedPositions.filter((position): position is string => typeof position === "string")
       .map((position) => position.trim())
     : [];
   const department = typeof input.department === "string" ? input.department.trim() : "";
@@ -96,8 +98,8 @@ Deno.serve(async (request) => {
   }
   if (
     positions.length === 0 ||
-    !Array.isArray(input.position) ||
-    positions.length !== input.position.length ||
+    !Array.isArray(providedPositions) ||
+    positions.length !== providedPositions.length ||
     positions.length !== new Set(positions).size ||
     positions.some((position) => !allowedPositions.has(position))
   ) {

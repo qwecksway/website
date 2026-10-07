@@ -1455,14 +1455,20 @@ if (typeof window.initializeTranscriptImporter === "function") {
           body: {
             full_name: String(data.get("full_name") || "").trim(),
             email: String(data.get("email") || "").trim().toLowerCase(),
-            position: data.getAll("position").map(function (position) {
-              return String(position).trim();
-            }),
             department: String(data.get("department") || "").trim(),
             temporary_password: temporaryPassword
           }
         });
-        if (result.error) throw result.error;
+        if (result.error) {
+          var detail = "";
+          try {
+            if (result.error.context && typeof result.error.context.text === "function") {
+              var raw = await result.error.context.text();
+              try { detail = JSON.parse(raw).error || raw; } catch (parseError) { detail = raw; }
+            }
+          } catch (readError) { detail = ""; }
+          throw new Error(detail || result.error.message);
+        }
 
         showAlert(
           status,
