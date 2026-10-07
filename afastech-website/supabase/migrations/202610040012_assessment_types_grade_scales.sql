@@ -447,7 +447,7 @@ where grade_scale_id is null;
 -- ============================================================================
 create or replace view public.student_term_results as
 select
-  ar.student_id,
+  r.student_id,
   ay.id as academic_year_id,
   ay.name as academic_year_name,
   at.id as term_id,
