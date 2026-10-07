@@ -99,8 +99,8 @@ begin
 
   for result_record in select jsonb_array_elements(target_results)
   loop
-    student_uuid := result_record->>'student_id'::uuid;
-    score_value := result_record->>'score'::numeric(6,2);
+    student_uuid := (result_record->>'student_id')::uuid;
+    score_value := (result_record->>'score')::numeric(6,2);
 
     insert into public.batch_result_staging (
       assessment_id, student_id, score, source_page, raw_text
@@ -148,23 +148,18 @@ begin
       continue;
     end if;
 
-    -- Check student is enrolled in the class
+    -- Check student is enrolled in the assessment's class and year
     if not exists (
-      select 1 from public.academic_class_subjects cs
-      join public.academic_results ar on ar.assessment_id = cs.id
-      where cs.id = staging_record.assessment_id
-        and ar.student_id = staging_record.student_id
+      select 1
+      from public.academic_assessments as a
+      join public.academic_class_subjects as cs on cs.id = a.class_subject_id
+      join public.academic_enrolments as e
+        on e.class_id = cs.class_id and e.academic_year_id = cs.academic_year_id
+      where a.id = staging_record.assessment_id
+        and e.student_id = staging_record.student_id
     ) then
-      -- Check enrolment
-      if not exists (
-        select 1 from public.academic_enrolments e
-        join public.academic_class_subjects cs on cs.class_id = e.class_id
-        where cs.id = staging_record.assessment_id
-          and e.student_id = staging_record.student_id
-      ) then
-        skipped_count := skipped_count + 1;
-        continue;
-      end if;
+      skipped_count := skipped_count + 1;
+      continue;
     end if;
 
     -- Insert or update the result
@@ -179,7 +174,7 @@ begin
   -- Clear staging table after applying
   delete from public.batch_result_staging;
 
-  return row(applied_count, skipped_count);
+  return query select applied_count, skipped_count;
 end;
 $$;
 
@@ -198,7 +193,7 @@ begin
   end if;
 
   delete from public.batch_result_staging;
-  get diag deleted_count := row_count;
+  get diagnostics deleted_count = row_count;
   return deleted_count;
 end;
 $$;
