@@ -805,6 +805,11 @@
     setSelectOptions(document.getElementById("admin-student-import-year"), years, "Choose an academic year", "name", function (item) {
       return item.name + (item.is_current ? " (current)" : "");
     });
+    var importYear = document.getElementById("admin-student-import-year");
+    if (importYear && !importYear.value) {
+      var preferred = years.filter(function (item) { return item.is_current; })[0] || (years.length === 1 ? years[0] : null);
+      if (preferred) importYear.value = preferred.name;
+    }
     setSelectOptions(document.getElementById("admin-academic-class-programme"), programmes, "Choose a programme", "id", function (item) {
       return item.name;
     });
@@ -1690,7 +1695,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
         return null;
       }
       if (!academicYear) {
-        showAlert(status, "Choose an academic year before creating accounts.", "error");
+        showAlert(status, "Choose the Academic year (for example 2026/2027) at the top of this page. This is separate from the Year 1/2/3 choice. If the list is empty, add an academic year under Academics first.", "error");
         return null;
       }
       var confirmed = window.confirm(
