@@ -106,7 +106,7 @@ create table public.academic_results (
 );
 
 insert into public.academic_programmes (name)
-select distinct trim(sd.programme)
+select distinct on (lower(trim(sd.programme))) trim(sd.programme)
 from public.student_details as sd
 where nullif(trim(sd.programme), '') is not null
 on conflict (name_key) do nothing;
@@ -116,7 +116,7 @@ values ('General')
 on conflict (name_key) do nothing;
 
 insert into public.academic_classes (programme_id, name)
-select distinct ap.id, trim(sd.form_class)
+select distinct on (ap.id, lower(trim(sd.form_class))) ap.id, trim(sd.form_class)
 from public.student_details as sd
 join public.academic_programmes as ap
   on ap.name_key = coalesce(nullif(lower(trim(sd.programme)), ''), 'general')
