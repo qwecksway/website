@@ -127,13 +127,13 @@
             </div>
             <fieldset class="sr-fields">
               <legend>Candidate name</legend>
-              <div class="field"><label for="sr-edit-first">First name</label><input id="sr-edit-first" type="text" maxlength="60" required></div>
+              <div class="field"><label for="sr-edit-first">First name</label><input id="sr-edit-first" type="text" maxlength="60"></div>
               <div class="field"><label for="sr-edit-other">Other names</label><input id="sr-edit-other" type="text" maxlength="80"></div>
-              <div class="field"><label for="sr-edit-last">Last name</label><input id="sr-edit-last" type="text" maxlength="60" required></div>
+              <div class="field"><label for="sr-edit-last">Last name</label><input id="sr-edit-last" type="text" maxlength="60"></div>
             </fieldset>
             <fieldset class="sr-fields">
               <legend>Personal details</legend>
-              <div class="field"><label for="sr-edit-dob">Date of birth</label><input id="sr-edit-dob" type="date" required></div>
+              <div class="field"><label for="sr-edit-dob">Date of birth</label><input id="sr-edit-dob" type="date"></div>
               <div class="field"><label for="sr-edit-gender">Gender</label>
                 <select id="sr-edit-gender"><option value="">Not set</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
               <div class="field"><label for="sr-edit-pob">Place of birth</label><input id="sr-edit-pob" type="text" maxlength="120"></div>
@@ -146,14 +146,15 @@
             </fieldset>
             <fieldset class="sr-fields">
               <legend>School record</legend>
-              <div class="field"><label for="sr-edit-index">CassRefID / index number</label><input id="sr-edit-index" type="text" maxlength="12" required></div>
+              <div class="field"><label for="sr-edit-index">CassRefID / index number</label><input id="sr-edit-index" type="text" maxlength="12"></div>
               <div class="field"><label for="sr-edit-class">Class</label><input id="sr-edit-class" type="text" maxlength="40"></div>
-              <div class="field"><label for="sr-edit-programme">Programme / learning area</label><input id="sr-edit-programme" type="text" maxlength="120" required></div>
+              <div class="field"><label for="sr-edit-programme">Programme / learning area</label><input id="sr-edit-programme" type="text" maxlength="120"></div>
               <div class="field"><label for="sr-edit-residency">Residency</label><input id="sr-edit-residency" type="text" maxlength="80"></div>
             </fieldset>
             <div class="sr-actions">
               <button class="btn btn-primary" type="submit">Save changes</button>
               <button id="sr-edit-cancel" class="btn btn-outline" type="button">Cancel</button>
+              <button id="sr-edit-delete" class="btn btn-danger" type="button">Delete student</button>
             </div>
           </form>
           <p id="sr-edit-status" class="alert" role="status"></p>

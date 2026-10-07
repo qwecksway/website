@@ -223,11 +223,6 @@
     var record = admin.selected;
     if (!record) return;
     var contact = byId("sr-edit-contact").value.trim();
-    if (!byId("sr-edit-first").value.trim() || !byId("sr-edit-last").value.trim() ||
-      !byId("sr-edit-dob").value || !byId("sr-edit-index").value.trim() || !byId("sr-edit-programme").value.trim()) {
-      showAlert(status, "First name, last name, date of birth, CassRefID and programme are required.", "error");
-      return;
-    }
     if (contact && !CONTACT_PATTERN.test(contact)) {
       showAlert(status, "Enter a valid contact number (digits, spaces, + ( ) - only).", "error");
       return;
@@ -258,6 +253,27 @@
       showAlert(status, "Saved. The student's portal now shows the updated details.", "success");
     } catch (error) {
       showAlert(status, "The record could not be saved: " + (error.message || "unknown error"), "error");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function deleteStudent() {
+    var record = admin.selected;
+    var status = byId("sr-edit-status");
+    if (!record) return;
+    var label = displayName(record);
+    if (!window.confirm("Permanently delete " + label + "? This removes their account, record, photo and results and cannot be undone.")) return;
+    var button = byId("sr-edit-delete");
+    button.disabled = true;
+    try {
+      var result = await admin.client.rpc("admin_delete_student", { target_student_id: record.id });
+      if (result.error) throw result.error;
+      closeEditor();
+      await refreshAfterChange();
+      showAlert(byId("sr-search-status"), label + " has been deleted.", "success");
+    } catch (error) {
+      showAlert(status, "The student could not be deleted: " + (error.message || "unknown error"), "error");
     } finally {
       button.disabled = false;
     }
@@ -330,6 +346,7 @@
     byId("sr-edit-form").addEventListener("submit", saveEditor);
     byId("sr-editor-close").addEventListener("click", closeEditor);
     byId("sr-edit-cancel").addEventListener("click", closeEditor);
+    byId("sr-edit-delete").addEventListener("click", deleteStudent);
     byId("sr-edit-photo-file").addEventListener("change", handleEditorPhoto);
 
     var panel = byId("student-import");

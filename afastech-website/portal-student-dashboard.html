@@ -68,16 +68,14 @@
         <section class="student-panel student-personal-panel">
           <div class="student-panel-heading">
             <div><p class="student-eyebrow">YOUR SCHOOL RECORD</p><h2>Personal details</h2></div>
-            <span class="student-panel-note">Some details are locked</span>
           </div>
           <div class="sp-layout">
             <div class="sp-photo-col">
               <img id="sp-photo" class="sp-photo" alt="Your passport photograph" hidden>
               <div id="sp-photo-empty" class="sp-photo sp-photo-empty">No photo</div>
-              <small>Passport photo is managed by the school office.</small>
+              
             </div>
             <div class="sp-main">
-              <h3 class="sp-subhead">Locked details</h3>
               <dl class="student-personal-grid">
                 <div><dt>First name</dt><dd data-sp-first>Not set</dd></div>
                 <div><dt>Other names</dt><dd data-sp-other>Not set</dd></div>
@@ -89,7 +87,6 @@
                 <div><dt>Residency</dt><dd data-student-personal-residency>Not set</dd></div>
                 <div><dt>Sign-in ID / email</dt><dd data-student-email>Not set</dd></div>
               </dl>
-              <h3 class="sp-subhead">Details you can update</h3>
               <form id="sp-form" class="sp-form" novalidate>
                 <div class="field"><label for="sp-gender">Gender</label>
                   <select id="sp-gender"><option value="">Not set</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
@@ -100,7 +97,6 @@
                 <div class="sp-actions"><button class="btn btn-primary" type="submit">Save changes</button></div>
               </form>
               <p id="sp-status" class="alert" role="status"></p>
-              <p class="student-personal-note">Locked details can only be changed by the school office. Contact the office if any of them are incorrect.</p>
             </div>
           </div>
         </section>

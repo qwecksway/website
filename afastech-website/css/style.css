@@ -5069,3 +5069,6 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sp-form .field { margin: 0 0 .75rem; }
 .sp-actions { grid-column: 1 / -1; }
 @media (max-width: 700px) { .sp-layout { grid-template-columns: 1fr; } }
+.btn-danger{background:#b42318;border:1px solid #b42318;color:#fff;border-radius:8px;padding:.6rem 1.1rem;font-weight:600;cursor:pointer}
+.btn-danger:hover{background:#912018}
+.btn-danger:disabled{opacity:.6;cursor:not-allowed}
