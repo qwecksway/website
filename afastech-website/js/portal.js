@@ -1436,63 +1436,34 @@ if (typeof window.initializeTranscriptImporter === "function") {
     var form = document.getElementById("admin-staff-form");
     var status = document.getElementById("admin-staff-status");
     if (!form) return;
-    var passwordInput = document.getElementById("admin-staff-password");
-    var showPassword = document.getElementById("admin-staff-show-password");
-    showPassword.addEventListener("change", function () {
-      passwordInput.type = showPassword.checked ? "text" : "password";
-    });
-
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       var button = form.querySelector("button[type='submit']");
       var data = new FormData(form);
-      var temporaryPassword = String(data.get("temporary_password") || "");
       button.disabled = true;
-      showAlert(status, "Creating the Staff Portal account…", "success");
+      showAlert(status, "Adding the staff member…", "success");
 
       try {
-        var result = await client.functions.invoke("invite-staff", {
-          body: {
-            full_name: String(data.get("full_name") || "").trim(),
-            email: String(data.get("email") || "").trim().toLowerCase(),
-            department: String(data.get("department") || "").trim(),
-            temporary_password: temporaryPassword
-          }
+        var result = await client.rpc("admin_register_staff_by_email", {
+          target_email: String(data.get("email") || "").trim().toLowerCase(),
+          target_full_name: String(data.get("full_name") || "").trim(),
+          target_department: String(data.get("department") || "").trim()
         });
-        if (result.error) {
-          var detail = "";
-          try {
-            if (result.error.context && typeof result.error.context.text === "function") {
-              var raw = await result.error.context.text();
-              try { detail = JSON.parse(raw).error || raw; } catch (parseError) { detail = raw; }
-            }
-          } catch (readError) { detail = ""; }
-          throw new Error(detail || result.error.message);
-        }
+        if (result.error) throw result.error;
 
-        showAlert(
-          status,
-          "Staff account created in Supabase Auth. Share the temporary password privately; the staff member should change it after signing in.",
-          "success"
-        );
+        showAlert(status, "Staff member added. Assign job titles in the table below.", "success");
         form.reset();
-        passwordInput.type = "password";
-        passwordInput.value = temporaryPassword;
         try {
           await loadAdminDashboard(client);
         } catch (error) {
-          showAlert(
-            status,
-            "Staff account created, but the account list could not be refreshed. Reload the page; share the temporary password privately.",
-            "error"
-          );
+          showAlert(status, "Staff member added, but the list could not be refreshed. Reload the page.", "error");
         }
       } catch (error) {
         showAlert(
           status,
           error && error.message
-            ? "The staff account could not be created: " + error.message
-            : "The staff account could not be created. Check the email address and Edge Function setup, then try again.",
+            ? "The staff member could not be added: " + error.message
+            : "The staff member could not be added. Check the email address and try again.",
           "error"
         );
       } finally {

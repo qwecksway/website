@@ -83,7 +83,6 @@ The portal uses Supabase Auth and the Supabase JavaScript client (pinned to v2.1
    From the repository root, deploy the staff and student-account functions (the API bundler avoids requiring Docker):
 
     ```powershell
-    supabase functions deploy invite-staff --project-ref YOUR_PROJECT_REF --use-api
     supabase functions deploy import-student-roster --project-ref YOUR_PROJECT_REF --use-api
     ```
 
