@@ -250,8 +250,7 @@
       ? "Correct any detail, then save. The student sees the update immediately."
       : "Name on file: " + (record.full_name || "not set") + ". Enter the first, other and last names to complete this record.";
     setPhoto(byId("sr-edit-photo"), byId("sr-edit-photo-empty"), "");
-    editor.hidden = false;
-    editor.scrollIntoView({ behavior: "smooth", block: "start" });
+    showMode("editor");
     var url = await signedPhotoUrl(admin.client, record.photo_path);
     if (admin.selected && admin.selected.id === record.id) {
       setPhoto(byId("sr-edit-photo"), byId("sr-edit-photo-empty"), url);
@@ -260,7 +259,7 @@
 
   function closeEditor() {
     admin.selected = null;
-    byId("sr-editor").hidden = true;
+    showMode("browse");
   }
 
   async function saveEditor(event) {
@@ -396,21 +395,40 @@
     byId("sr-edit-delete").addEventListener("click", deleteStudent);
     byId("sr-edit-photo-file").addEventListener("change", handleEditorPhoto);
 
-    var panel = byId("student-import");
-    var toggle = byId("sr-add-toggle");
-    toggle.addEventListener("click", function () {
-      var open = panel.hidden;
-      panel.hidden = !open;
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.textContent = open ? "Close" : "+ Add student";
-      if (open) panel.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
     byId("sr-tab-single").addEventListener("click", function () { selectAddTab("single"); });
     byId("sr-tab-bulk").addEventListener("click", function () { selectAddTab("bulk"); });
     byId("sr-template-download").addEventListener("click", downloadTemplate);
     selectAddTab("single");
+    bindModes();
     bindFilters();
     bindPrint();
+  }
+
+  var MODE_PANELS = { hub: "sr-hub", browse: "sr-browse", add: "student-import", print: "sr-print-panel", editor: "sr-editor" };
+
+  function showMode(mode) {
+    Object.keys(MODE_PANELS).forEach(function (key) {
+      var panel = byId(MODE_PANELS[key]);
+      if (panel) panel.hidden = key !== mode;
+    });
+    if (mode === "print") updatePrintCount();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function bindModes() {
+    document.querySelectorAll("[data-sr-open]").forEach(function (tile) {
+      tile.addEventListener("click", function () {
+        showMode(tile.getAttribute("data-sr-open"));
+        var focusId = tile.getAttribute("data-sr-focus");
+        if (focusId) byId(focusId).focus();
+      });
+    });
+    document.querySelectorAll("[data-sr-back]").forEach(function (button) {
+      button.addEventListener("click", function () { showMode("hub"); });
+    });
+    var studentsLink = document.querySelector(".dash-nav a[href='#view-students']");
+    if (studentsLink) studentsLink.addEventListener("click", function () { showMode("hub"); });
+    showMode("hub");
   }
 
   function bindFilters() {
@@ -536,15 +554,6 @@
     byId("sr-print-form").addEventListener("submit", printList);
     ["sr-print-year", "sr-print-area", "sr-print-residency", "sr-print-gender"].forEach(function (id) {
       byId(id).addEventListener("change", updatePrintCount);
-    });
-    var toggle = byId("sr-print-toggle");
-    var panel = byId("sr-print-panel");
-    toggle.addEventListener("click", function () {
-      var open = panel.hidden;
-      panel.hidden = !open;
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.textContent = open ? "Close print" : "Print list";
-      if (open) { updatePrintCount(); panel.scrollIntoView({ behavior: "smooth", block: "start" }); }
     });
     updatePrintCount();
   }

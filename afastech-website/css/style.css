@@ -5080,3 +5080,11 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sr-checks{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;grid-column:1/-1}
 .sr-checks label{display:flex;align-items:center;gap:.4rem;font-weight:500}
 .sr-print-count{margin-left:.75rem;color:#555;font-size:.9rem}
+
+.sr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.sr-tile{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;text-align:left;padding:1.25rem;background:#fff;border:1.5px solid #cfd8e8;border-radius:12px;font:inherit;color:#0b2447;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.sr-tile:hover,.sr-tile:focus-visible{border-color:#235fd0;box-shadow:0 6px 18px rgba(35,95,208,.15);transform:translateY(-2px)}
+.sr-tile strong{font-size:1.05rem}
+.sr-tile small{color:#5a6a85;line-height:1.4}
+.sr-tile-icon{display:inline-flex;width:42px;height:42px;align-items:center;justify-content:center;border-radius:10px;background:#e8effc;color:#235fd0}
+.sr-tile-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

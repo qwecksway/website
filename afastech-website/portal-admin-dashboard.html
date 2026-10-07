@@ -27,7 +27,7 @@
 <main id="main" class="portal-shell">
   <div class="container dash-grid" data-dashboard-layout>
     <nav id="admin-navigation" aria-label="Administration">
-      <a class="admin-brand" href="index.html">
+      <a class="admin-brand" href="#view-overview" data-admin-home>
         <span class="admin-brand-mark" aria-hidden="true">A</span>
         <span class="admin-brand-text"><strong>AFASTECH</strong><small>School Management</small></span>
       </a>
@@ -78,16 +78,22 @@
         <p class="dashboard-overview-note">Choose a section from the menu to manage students, staff access, academics, houses, or fee records.</p>
         </section>
         <section id="view-students" class="dashboard-view" data-dashboard-view hidden>
-        <section class="card sr-card" aria-labelledby="sr-heading">
+        <section id="sr-hub" class="card sr-card" aria-labelledby="sr-hub-heading">
+          <div class="sr-head"><div><h2 id="sr-hub-heading">Students</h2><p>Choose what you would like to do.</p></div></div>
+          <div class="sr-grid">
+            <button type="button" class="sr-tile" data-sr-open="browse" data-sr-focus="sr-search-name"><span class="sr-tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><strong>Find &amp; edit a student</strong><small>Search by first name, last name or date of birth and correct a record.</small></button>
+            <button type="button" class="sr-tile" data-sr-open="browse"><span class="sr-tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></span><strong>Browse by year</strong><small>See students in Year 1, Year 2 or Year 3 and filter by learning area.</small></button>
+            <button type="button" class="sr-tile" data-sr-open="add"><span class="sr-tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M19 8v6M16 11h6"/></svg></span><strong>Add student</strong><small>Add one student manually or upload many at once.</small></button>
+            <button type="button" class="sr-tile" data-sr-open="print"><span class="sr-tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg></span><strong>Print list</strong><small>Print a class, year or learning area with the columns you choose.</small></button>
+          </div>
+        </section>
+        <section id="sr-browse" class="card sr-card" aria-labelledby="sr-heading" hidden>
           <div class="sr-head">
             <div>
               <h2 id="sr-heading">Students</h2>
               <p>Search for a student to view or correct their record. Changes appear in the student's portal straight away.</p>
             </div>
-            <div class="sr-head-actions">
-              <button id="sr-print-toggle" class="btn btn-outline" type="button" aria-expanded="false" aria-controls="sr-print-panel">Print list</button>
-              <button id="sr-add-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="student-import">+ Add student</button>
-            </div>
+            <div class="sr-head-actions"><button type="button" class="btn btn-outline" data-sr-back>&larr; Back to Students</button></div>
           </div>
           <form id="sr-search-form" class="sr-search" role="search">
             <div class="field">
@@ -124,7 +130,7 @@
 
         <section id="sr-print-panel" class="card sr-card" aria-labelledby="sr-print-heading" hidden>
           <div class="sr-head"><div><h2 id="sr-print-heading">Print student list</h2>
-            <p>Choose which students and which columns to include, then print or save as PDF.</p></div></div>
+            <p>Choose which students and which columns to include, then print or save as PDF.</p></div><div class="sr-head-actions"><button type="button" class="btn btn-outline" data-sr-back>&larr; Back to Students</button></div></div>
           <form id="sr-print-form" class="sr-form">
             <fieldset class="sr-fields">
               <legend>Which students</legend>
@@ -207,6 +213,7 @@
               <h2 id="sr-add-heading">Add students</h2>
               <p>Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
             </div>
+            <div class="sr-head-actions"><button type="button" class="btn btn-outline" data-sr-back>&larr; Back to Students</button></div>
           </div>
           <div class="sr-inline-fields">
             <div class="field">

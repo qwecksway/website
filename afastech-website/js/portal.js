@@ -1903,6 +1903,13 @@ if (typeof window.initializeTranscriptImporter === "function") {
       return true;
     }
 
+    var homeLink = layout.querySelector("[data-admin-home]");
+    if (homeLink) {
+      homeLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        selectView("view-overview", true);
+      });
+    }
     views.forEach(function (view) {
       var selected = view.classList.contains("is-active");
       view.hidden = !selected || view.dataset.viewDisabled === "true";
