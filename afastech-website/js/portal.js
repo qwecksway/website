@@ -743,10 +743,25 @@
           showAlert(document.getElementById("portal-data-alert"), "The staff record was saved, but the account list could not be refreshed. Reload the page.", "error");
         }
       });
+      var reveal = document.createElement("button");
+      reveal.className = "btn btn-outline";
+      reveal.type = "button";
+      reveal.textContent = "Show temp password";
+      reveal.addEventListener("click", async function () {
+        reveal.disabled = true;
+        try {
+          var pw = await client.rpc("admin_get_staff_temp_password", { target_staff_id: member.id });
+          if (pw.error) throw pw.error;
+          reveal.textContent = pw.data ? "Temp password: " + pw.data : "Password already changed";
+        } catch (error) {
+          reveal.textContent = "Could not load";
+          reveal.disabled = false;
+        }
+      });
       nameInput.className = "admin-record-name";
       titleCell.appendChild(titleSelect);
       departmentCell.appendChild(departmentSelect);
-      actionCell.appendChild(save);
+      actionCell.append(save, reveal);
       row.append(identity, titleCell, departmentCell, actionCell);
       tbody.appendChild(row);
     });
@@ -1441,29 +1456,45 @@ if (typeof window.initializeTranscriptImporter === "function") {
       var button = form.querySelector("button[type='submit']");
       var data = new FormData(form);
       button.disabled = true;
-      showAlert(status, "Adding the staff member…", "success");
+      showAlert(status, "Creating the Staff Portal account…", "success");
 
       try {
-        var result = await client.rpc("admin_register_staff_by_email", {
-          target_email: String(data.get("email") || "").trim().toLowerCase(),
-          target_full_name: String(data.get("full_name") || "").trim(),
-          target_department: String(data.get("department") || "").trim()
+        var result = await client.functions.invoke("create-staff", {
+          body: {
+            full_name: String(data.get("full_name") || "").trim(),
+            email: String(data.get("email") || "").trim().toLowerCase(),
+            department: String(data.get("department") || "").trim()
+          }
         });
-        if (result.error) throw result.error;
+        if (result.error) {
+          var detail = "";
+          try {
+            if (result.error.context && typeof result.error.context.text === "function") {
+              var raw = await result.error.context.text();
+              try { detail = JSON.parse(raw).error || raw; } catch (parseError) { detail = raw; }
+            }
+          } catch (readError) { detail = ""; }
+          throw new Error(detail || result.error.message);
+        }
 
-        showAlert(status, "Staff member added. Assign job titles in the table below.", "success");
+        showAlert(
+          status,
+          "Staff account created. Temporary password: " + result.data.temporary_password +
+            " (the staff member must change it at first sign-in; you can view it again in the staff table until then).",
+          "success"
+        );
         form.reset();
         try {
           await loadAdminDashboard(client);
         } catch (error) {
-          showAlert(status, "Staff member added, but the list could not be refreshed. Reload the page.", "error");
+          showAlert(status, "Staff account created (temporary password: " + result.data.temporary_password + "), but the list could not be refreshed. Reload the page.", "error");
         }
       } catch (error) {
         showAlert(
           status,
           error && error.message
-            ? "The staff member could not be added: " + error.message
-            : "The staff member could not be added. Check the email address and try again.",
+            ? "The staff account could not be created: " + error.message
+            : "The staff account could not be created. Check the email address and try again.",
           "error"
         );
       } finally {
@@ -2034,8 +2065,45 @@ if (typeof window.initializeTranscriptImporter === "function") {
     });
   }
 
-  async function initializeDashboard(client, page) {
-    var requiredRole = page === "staff-dashboard" ? "staff" : page === "admin-dashboard" ? "admin" : "student";
+  function showForcedPasswordChange(client) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement("div");
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.85);display:flex;align-items:center;justify-content:center;padding:1rem;";
+      overlay.innerHTML = '<form class="card" style="max-width:420px;width:100%;background:#fff;padding:2rem;border-radius:12px;">' +
+        "<h2>Set a new password</h2>" +
+        "<p>You signed in with a temporary password. Choose a new password to continue.</p>" +
+        '<div class="field"><label for="force-new-password">New password (at least 10 characters)</label><input type="password" id="force-new-password" minlength="10" autocomplete="new-password" required></div>' +
+        '<div class="field"><label for="force-confirm-password">Confirm new password</label><input type="password" id="force-confirm-password" minlength="10" autocomplete="new-password" required></div>' +
+        '<button class="btn btn-primary" type="submit">Save password</button>' +
+        '<p class="alert" role="status" style="margin-top:1rem;"></p></form>';
+      document.body.appendChild(overlay);
+      var form = overlay.querySelector("form");
+      var status = overlay.querySelector(".alert");
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var password = form.querySelector("#force-new-password").value;
+        if (password.length < 10) { showAlert(status, "Use at least 10 characters.", "error"); return; }
+        if (password !== form.querySelector("#force-confirm-password").value) { showAlert(status, "The passwords do not match.", "error"); return; }
+        var button = form.querySelector("button[type='submit']");
+        button.disabled = true;
+        try {
+          var updated = await client.auth.updateUser({ password: password });
+          if (updated.error) throw updated.error;
+          var done = await client.rpc("complete_forced_password_change");
+          if (done.error) throw done.error;
+          overlay.remove();
+          resolve();
+        } catch (error) {
+          button.disabled = false;
+          showAlert(status, "Your password could not be changed: " + (error && error.message ? error.message : "try again."), "error");
+        }
+      });
+    });
+  }
+
+  async function initializeDashboard(client, page) {    var requiredRole = page === "staff-dashboard" ? "staff" : page === "admin-dashboard" ? "admin" : "student";
     var alertBox = document.getElementById("portal-data-alert");
     if (!client) {
       window.location.replace(LOGIN_PAGES[requiredRole]);
@@ -2093,6 +2161,12 @@ if (typeof window.initializeTranscriptImporter === "function") {
         initializePasswordChange(client, "student-password-form", "student-password-status");
       }
       else if (requiredRole === "staff") {
+        var mustChange = await client.rpc("my_must_change_password");
+        if (!mustChange.error && mustChange.data === true) {
+          document.querySelector("[data-dashboard-content]").hidden = true;
+          await showForcedPasswordChange(client);
+          document.querySelector("[data-dashboard-content]").hidden = false;
+        }
         refreshDashboardData = function () { return loadStaffDashboard(client, session.user.id); };
         await loadStaffDashboard(client, session.user.id);
         initializePasswordChange(client, "staff-password-form", "staff-password-status");

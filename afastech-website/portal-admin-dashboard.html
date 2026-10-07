@@ -322,7 +322,7 @@
         <section id="view-access" class="dashboard-view" data-dashboard-view hidden>
         <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
           <h2>Add a staff member or teacher</h2>
-          <p>Staff are added manually. First create the user (email and password) under Authentication → Users in Supabase, then enter the same email here to register them as staff. They are added as Teacher; assign other job titles in the table below.</p>
+          <p>Enter the staff member's name, school email and department. An 8-character temporary password is generated automatically and shown once here; you can view it again later in the staff table until the staff member changes it. They must set a new password at first sign-in. New staff start as Teacher; assign other job titles in the table below.</p>
           <form id="admin-staff-form">
             <div class="field">
               <label for="admin-staff-name">Full name</label>
@@ -344,7 +344,7 @@
                 <option value="HOME ECONOMICS">HOME ECONOMICS</option>
               </select>
             </div>
-            <button class="btn btn-primary" type="submit">Add Staff Member</button>
+            <button class="btn btn-primary" type="submit">Create Staff Account</button>
           </form>
           <p id="admin-staff-status" class="alert" role="status" style="margin-top:1rem;"></p>
         </section>
