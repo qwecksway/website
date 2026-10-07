@@ -93,7 +93,7 @@ begin
     raise exception using errcode = '42501', message = 'Administrator access required.';
   end if;
 
-  if target_results is null or jsonb_typeof(target_results) is not 'array' then
+  if target_results is null or jsonb_typeof(target_results) <> 'array' then
     raise exception using errcode = '22023', message = 'Results must be provided as a JSON array.';
   end if;
 
