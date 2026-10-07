@@ -274,7 +274,7 @@
           </form>
 
           <div id="sr-bulk-panel" role="tabpanel" hidden>
-            <p>Use a CSV or tab-separated roster. Required columns: <strong>School Code, CassRefID, LEARNING_AREA, YearOfEntry</strong> (LEARNING_AREA must be AGRIC, G.ARTS, TECHNICAL, HOME ECONOMICS or BUSINESS; the year is chosen below), plus either <strong>Name</strong> or <strong>First Name</strong> and <strong>Last Name</strong>. Optional columns: <strong>Other Names, DOB, Gender, Place of Birth, Hometown, Guardian, Guardian Contact</strong>. Dates may be YYYY-MM-DD or DD/MM/YYYY. Passport photos can be added afterwards from each student's record.</p>
+            <p>Upload a CSV or tab-separated file with exactly these columns: <strong>CassRefID, First Name, Other Names, Last Name, DOB, LEARNING_AREA, YearOfEntry</strong>. Other Names and DOB may be left blank. DOB may be YYYY-MM-DD or DD/MM/YYYY. LEARNING_AREA must be AGRIC, G.ARTS, TECHNICAL, HOME ECONOMICS or BUSINESS. The year (Year 1, 2 or 3) is chosen below. Gender, residency, guardian, photo and the rest can be added later from each student's record.</p>
             <button id="sr-template-download" class="btn btn-outline" type="button">Download CSV template</button>
             <form id="admin-student-import-form" style="margin-top:1rem;">
               <div class="field">
@@ -289,7 +289,7 @@
               <div class="field">
                 <label for="admin-student-import-data">Student roster (CSV or tab-separated)</label>
                 <input type="file" id="admin-student-import-file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
-                <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="School Code&#9;First Name&#9;Other Names&#9;Last Name&#9;CassRefID&#9;LEARNING_AREA&#9;YearOfEntry&#9;DOB&#9;Gender"></textarea>
+                <textarea id="admin-student-import-data" rows="10" spellcheck="false" required placeholder="CassRefID&#9;First Name&#9;Other Names&#9;Last Name&#9;DOB&#9;LEARNING_AREA&#9;YearOfEntry"></textarea>
               </div>
               <button class="btn btn-primary" type="submit">Create batch accounts</button>
             </form>

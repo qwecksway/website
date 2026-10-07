@@ -356,14 +356,8 @@
   }
 
   function downloadTemplate() {
-    var header = [
-      "School Code", "First Name", "Other Names", "Last Name", "CassRefID", "LEARNING_AREA",
-      "YearOfEntry", "DOB", "Gender", "Place of Birth", "Hometown", "Guardian", "Guardian Contact"
-    ];
-    var example = [
-      "0071007", "Ama", "Serwaa", "Mensah", "ABC123456789", "HOME ECONOMICS",
-      "2026", "2010-05-14", "Female", "Kumasi", "Mampong", "Kofi Mensah", "0244000000"
-    ];
+    var header = ["CassRefID", "First Name", "Other Names", "Last Name", "DOB", "LEARNING_AREA", "YearOfEntry"];
+    var example = ["ABC123456789", "Ama", "Serwaa", "Mensah", "2010-05-14", "HOME ECONOMICS", "2026"];
     var content = "\uFEFF" + header.join(",") + "\r\n" + example.join(",") + "\r\n";
     var url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
     var link = document.createElement("a");

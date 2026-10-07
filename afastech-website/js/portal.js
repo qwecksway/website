@@ -1566,41 +1566,33 @@ if (typeof window.initializeTranscriptImporter === "function") {
       return -1;
     }
     var columnIndexes = {
-      school_code: columnOf(["schoolcode"]),
-      full_name: columnOf(["name", "fullname"]),
       index_number: columnOf(["cassrefid"]),
+      first_name: columnOf(["firstname"]),
+      last_name: columnOf(["lastname", "surname"]),
       learning_area: columnOf(["learningarea"]),
       year_of_entry: columnOf(["yearofentry"])
     };
-    var optionalIndexes = {
-      first_name: columnOf(["firstname"]),
-      other_names: columnOf(["othernames", "othername", "middlename", "middlenames"]),
-      last_name: columnOf(["lastname", "surname"]),
-      date_of_birth: columnOf(["dateofbirth", "dob"]),
-      gender: columnOf(["gender", "sex"]),
-      place_of_birth: columnOf(["placeofbirth"]),
-      hometown: columnOf(["hometown"]),
-      guardian_name: columnOf(["guardian", "guardianname", "nameofguardian"]),
-      guardian_contact: columnOf(["guardiancontact", "contact", "guardianphone"])
-    };
-    var hasSplitName = optionalIndexes.first_name >= 0 && optionalIndexes.last_name >= 0;
-    var missing = Object.keys(columnIndexes).some(function (key) {
-      return columnIndexes[key] < 0 && !(key === "full_name" && hasSplitName);
-    });
-    if (missing) {
-      throw new Error("Required columns are School Code, CassRefID, LEARNING_AREA, YearOfEntry, and either Name or both First Name and Last Name.");
+    var otherNamesIndex = columnOf(["othernames", "othername", "middlename", "middlenames"]);
+    var dobIndex = columnOf(["dob", "dateofbirth", "birthdate"]);
+    var missing = Object.keys(columnIndexes).filter(function (key) { return columnIndexes[key] < 0; });
+    if (missing.length) {
+      throw new Error("The file must have these columns: CassRefID, First Name, Other Names, Last Name, DOB, LEARNING_AREA, YearOfEntry.");
     }
 
-    function normalizeDate(value, rowNumber) {
-      var text = String(value || "").trim();
-      if (!text) return "";
-      var iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-      var dmy = text.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+    function normalizeDob(value, rowNumber) {
+      var raw = String(value || "").trim();
+      if (!raw) return "";
+      var iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(raw);
+      var local = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/.exec(raw);
       var year, month, day;
-      if (iso) { year = iso[1]; month = iso[2]; day = iso[3]; }
-      else if (dmy) { year = dmy[3]; month = dmy[2]; day = dmy[1]; }
-      else throw new Error("Roster row " + rowNumber + " has a date of birth that is not YYYY-MM-DD or DD/MM/YYYY.");
-      return year + "-" + ("0" + month).slice(-2) + "-" + ("0" + day).slice(-2);
+      if (iso) { year = +iso[1]; month = +iso[2]; day = +iso[3]; }
+      else if (local) { day = +local[1]; month = +local[2]; year = +local[3]; }
+      else throw new Error("Roster row " + rowNumber + " has a date of birth that is not in YYYY-MM-DD or DD/MM/YYYY format.");
+      var date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+        throw new Error("Roster row " + rowNumber + " has an invalid date of birth.");
+      }
+      return year + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
     }
 
     return lines.slice(1).map(function (line, index) {
@@ -1608,18 +1600,17 @@ if (typeof window.initializeTranscriptImporter === "function") {
       if (values.length !== headers.length) {
         throw new Error("Roster row " + (index + 2) + " does not have the same number of columns as the header.");
       }
-      var student = {};
+      var student = {
+        school_code: "0071007",
+        other_names: otherNamesIndex >= 0 ? values[otherNamesIndex] : "",
+        date_of_birth: dobIndex >= 0 ? normalizeDob(values[dobIndex], index + 2) : ""
+      };
       Object.keys(columnIndexes).forEach(function (key) {
-        student[key] = columnIndexes[key] >= 0 ? values[columnIndexes[key]] : "";
+        student[key] = values[columnIndexes[key]];
       });
-      Object.keys(optionalIndexes).forEach(function (key) {
-        if (optionalIndexes[key] >= 0) student[key] = values[optionalIndexes[key]];
-      });
-      if (student.date_of_birth) student.date_of_birth = normalizeDate(student.date_of_birth, index + 2);
       return student;
     });
   }
-
   function csvCell(value) {
     var text = String(value);
     if (/^[=+\-@]/.test(text)) text = "'" + text;
