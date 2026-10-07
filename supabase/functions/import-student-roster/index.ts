@@ -34,6 +34,24 @@ function studentLoginEmail(indexNumber: string) {
   return `refid-${indexNumber.toLowerCase()}@${studentLoginDomain}`;
 }
 
+const LEARNING_AREAS: Record<string, string> = {
+  AGRIC: "AGRIC",
+  AGRICULTURE: "AGRIC",
+  AGRICULTURALSCIENCE: "AGRIC",
+  GARTS: "G.ARTS",
+  GENERALARTS: "G.ARTS",
+  ARTS: "G.ARTS",
+  TECHNICAL: "TECHNICAL",
+  TECH: "TECHNICAL",
+  HOMEECONOMICS: "HOME ECONOMICS",
+  HOMEECONS: "HOME ECONOMICS",
+  BUSINESS: "BUSINESS",
+};
+
+function normalizeLearningArea(value: string): string {
+  return LEARNING_AREAS[value.toUpperCase().replace(/[\s.\-_]+/g, "")] ?? "";
+}
+
 Deno.serve(async (request) => {
   const requestOrigin = request.headers.get("origin") || "";
   if (!allowedOrigins.includes(requestOrigin)) {
@@ -131,7 +149,7 @@ Deno.serve(async (request) => {
       ? row.index_number.trim().toUpperCase()
       : "";
     const learningArea = typeof row.learning_area === "string"
-      ? row.learning_area.trim().replace(/\s+/g, " ").toUpperCase()
+      ? normalizeLearningArea(row.learning_area)
       : "";
     const yearOfEntry = typeof row.year_of_entry === "string" || typeof row.year_of_entry === "number"
       ? String(row.year_of_entry).trim()
@@ -147,7 +165,7 @@ Deno.serve(async (request) => {
       return response({ error: `Roster row ${index + 1} has an invalid CassRefID.` }, 400, requestOrigin);
     }
     if (!learningArea || learningArea.length > 120) {
-      return response({ error: `Roster row ${index + 1} has an invalid learning area or programme.` }, 400, requestOrigin);
+      return response({ error: `Roster row ${index + 1} has an invalid learning area (use AGRIC, G.ARTS, TECHNICAL, HOME ECONOMICS or BUSINESS).` }, 400, requestOrigin);
     }
     if (!/^(19|20|21)\d{2}$/.test(yearOfEntry)) {
       return response({ error: `Roster row ${index + 1} has an invalid year of entry.` }, 400, requestOrigin);

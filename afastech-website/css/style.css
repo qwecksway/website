@@ -5072,3 +5072,11 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .btn-danger{background:#b42318;border:1px solid #b42318;color:#fff;border-radius:8px;padding:.6rem 1.1rem;font-weight:600;cursor:pointer}
 .btn-danger:hover{background:#912018}
 .btn-danger:disabled{opacity:.6;cursor:not-allowed}
+
+.sr-head-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.sr-filters{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin:.5rem 0 1rem}
+.sr-year-tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+.sr-area-filter{min-width:220px;margin:0}
+.sr-checks{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;grid-column:1/-1}
+.sr-checks label{display:flex;align-items:center;gap:.4rem;font-weight:500}
+.sr-print-count{margin-left:.75rem;color:#555;font-size:.9rem}

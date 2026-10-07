@@ -84,7 +84,10 @@
               <h2 id="sr-heading">Students</h2>
               <p>Search for a student to view or correct their record. Changes appear in the student's portal straight away.</p>
             </div>
-            <button id="sr-add-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="student-import">+ Add student</button>
+            <div class="sr-head-actions">
+              <button id="sr-print-toggle" class="btn btn-outline" type="button" aria-expanded="false" aria-controls="sr-print-panel">Print list</button>
+              <button id="sr-add-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="student-import">+ Add student</button>
+            </div>
           </div>
           <form id="sr-search-form" class="sr-search" role="search">
             <div class="field">
@@ -101,12 +104,50 @@
             </div>
           </form>
           <p id="sr-search-status" class="alert" role="status"></p>
+          <div class="sr-filters">
+            <div id="sr-year-tabs" class="sr-year-tabs" role="group" aria-label="Filter by year">
+              <button type="button" class="sr-tab is-active" data-year="">All years</button>
+              <button type="button" class="sr-tab" data-year="SHS 1">Year 1</button>
+              <button type="button" class="sr-tab" data-year="SHS 2">Year 2</button>
+              <button type="button" class="sr-tab" data-year="SHS 3">Year 3</button>
+            </div>
+            <div class="field sr-area-filter"><label for="sr-filter-area">Learning area</label>
+              <select id="sr-filter-area"><option value="">All learning areas</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select></div>
+          </div>
           <div style="overflow-x:auto;">
             <table class="data-table">
-              <thead><tr><th>Student</th><th>CassRefID</th><th>Class</th><th>Date of birth</th><th>Action</th></tr></thead>
+              <thead><tr><th>Student</th><th>CassRefID</th><th>Year</th><th>Learning area</th><th>Date of birth</th><th>Action</th></tr></thead>
               <tbody id="sr-results"></tbody>
             </table>
           </div>
+        </section>
+
+        <section id="sr-print-panel" class="card sr-card" aria-labelledby="sr-print-heading" hidden>
+          <div class="sr-head"><div><h2 id="sr-print-heading">Print student list</h2>
+            <p>Choose which students and which columns to include, then print or save as PDF.</p></div></div>
+          <form id="sr-print-form" class="sr-form">
+            <fieldset class="sr-fields">
+              <legend>Which students</legend>
+              <div class="field"><label for="sr-print-year">Year</label><select id="sr-print-year"><option value="">All years</option><option value="SHS 1">Year 1</option><option value="SHS 2">Year 2</option><option value="SHS 3">Year 3</option></select></div>
+              <div class="field"><label for="sr-print-area">Learning area</label><select id="sr-print-area"><option value="">All learning areas</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select></div>
+              <div class="field"><label for="sr-print-residency">Residency</label><select id="sr-print-residency"><option value="">All</option><option value="Boarding">Boarding</option><option value="Day">Day</option></select></div>
+              <div class="field"><label for="sr-print-gender">Gender</label><select id="sr-print-gender"><option value="">All</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Columns to print</legend>
+              <div id="sr-print-cols" class="sr-checks"></div>
+            </fieldset>
+            <fieldset class="sr-fields">
+              <legend>Layout</legend>
+              <div class="field"><label for="sr-print-title">Title (optional)</label><input id="sr-print-title" type="text" maxlength="100" placeholder="e.g. Year 1 Agric register"></div>
+              <div class="field"><label for="sr-print-sort">Order by</label><select id="sr-print-sort"><option value="group">Year, learning area, then name</option><option value="name">Name</option><option value="index">CassRefID</option></select></div>
+            </fieldset>
+            <div class="sr-actions">
+              <button class="btn btn-primary" type="submit">Print / Save as PDF</button>
+              <span id="sr-print-count" class="sr-print-count"></span>
+            </div>
+          </form>
+          <p id="sr-print-status" class="alert" role="status"></p>
         </section>
 
         <section id="sr-editor" class="card sr-card" aria-labelledby="sr-editor-heading" hidden>
@@ -147,9 +188,9 @@
             <fieldset class="sr-fields">
               <legend>School record</legend>
               <div class="field"><label for="sr-edit-index">CassRefID / index number</label><input id="sr-edit-index" type="text" maxlength="12"></div>
-              <div class="field"><label for="sr-edit-class">Class</label><input id="sr-edit-class" type="text" maxlength="40"></div>
-              <div class="field"><label for="sr-edit-programme">Programme / learning area</label><input id="sr-edit-programme" type="text" maxlength="120"></div>
-              <div class="field"><label for="sr-edit-residency">Residency</label><input id="sr-edit-residency" type="text" maxlength="80"></div>
+              <div class="field"><label for="sr-edit-class">Year</label><select id="sr-edit-class"><option value="">Not set</option><option value="SHS 1">Year 1</option><option value="SHS 2">Year 2</option><option value="SHS 3">Year 3</option></select></div>
+              <div class="field"><label for="sr-edit-programme">Learning area</label><select id="sr-edit-programme"><option value="">Not set</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select></div>
+              <div class="field"><label for="sr-edit-residency">Residency</label><select id="sr-edit-residency"><option value="">Not set</option><option value="Boarding">Boarding</option><option value="Day">Day</option></select></div>
             </fieldset>
             <div class="sr-actions">
               <button class="btn btn-primary" type="submit">Save changes</button>
@@ -210,32 +251,32 @@
             <fieldset class="sr-fields">
               <legend>School record</legend>
               <div class="field">
-                <label for="admin-student-single-class">Class</label>
+                <label for="admin-student-single-class">Year</label>
                 <select id="admin-student-single-class" required>
-                  <option value="">Choose class</option>
-                  <option value="SHS 1">SHS 1</option>
-                  <option value="SHS 2">SHS 2</option>
-                  <option value="SHS 3">SHS 3</option>
+                  <option value="">Choose year</option>
+                  <option value="SHS 1">Year 1</option>
+                  <option value="SHS 2">Year 2</option>
+                  <option value="SHS 3">Year 3</option>
                 </select>
               </div>
               <div class="field"><label for="admin-student-single-index">CassRefID / index number</label><input id="admin-student-single-index" type="text" maxlength="12" autocomplete="off" required></div>
-              <div class="field"><label for="admin-student-single-programme">Learning area / programme</label><input id="admin-student-single-programme" type="text" maxlength="120" required></div>
+              <div class="field"><label for="admin-student-single-programme">Learning area</label><select id="admin-student-single-programme" required><option value="">Choose learning area</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select></div>
               <div class="field"><label for="admin-student-single-entry-year">Year of entry</label><input id="admin-student-single-entry-year" type="number" min="1900" max="2199" step="1" required></div>
             </fieldset>
             <div class="sr-actions"><button class="btn btn-primary" type="submit">Create student account</button></div>
           </form>
 
           <div id="sr-bulk-panel" role="tabpanel" hidden>
-            <p>Use a CSV or tab-separated roster. Required columns: <strong>School Code, CassRefID, LEARNING_AREA, YearOfEntry</strong>, plus either <strong>Name</strong> or <strong>First Name</strong> and <strong>Last Name</strong>. Optional columns: <strong>Other Names, DOB, Gender, Place of Birth, Hometown, Guardian, Guardian Contact</strong>. Dates may be YYYY-MM-DD or DD/MM/YYYY. Passport photos can be added afterwards from each student's record.</p>
+            <p>Use a CSV or tab-separated roster. Required columns: <strong>School Code, CassRefID, LEARNING_AREA, YearOfEntry</strong> (LEARNING_AREA must be AGRIC, G.ARTS, TECHNICAL, HOME ECONOMICS or BUSINESS; the year is chosen below), plus either <strong>Name</strong> or <strong>First Name</strong> and <strong>Last Name</strong>. Optional columns: <strong>Other Names, DOB, Gender, Place of Birth, Hometown, Guardian, Guardian Contact</strong>. Dates may be YYYY-MM-DD or DD/MM/YYYY. Passport photos can be added afterwards from each student's record.</p>
             <button id="sr-template-download" class="btn btn-outline" type="button">Download CSV template</button>
             <form id="admin-student-import-form" style="margin-top:1rem;">
               <div class="field">
-                <label for="admin-student-import-class">Class</label>
+                <label for="admin-student-import-class">Year</label>
                 <select id="admin-student-import-class" required>
-                  <option value="">Choose class</option>
-                  <option value="SHS 1">SHS 1</option>
-                  <option value="SHS 2">SHS 2</option>
-                  <option value="SHS 3">SHS 3</option>
+                  <option value="">Choose year</option>
+                  <option value="SHS 1">Year 1</option>
+                  <option value="SHS 2">Year 2</option>
+                  <option value="SHS 3">Year 3</option>
                 </select>
               </div>
               <div class="field">

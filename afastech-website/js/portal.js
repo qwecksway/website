@@ -141,10 +141,10 @@
       document.querySelector("[data-student-residency]").textContent = record.residency || "Not set";
       document.querySelector("[data-student-term]").textContent = record.current_term || "Not set";
       document.querySelector("[data-student-index]").textContent = record.index_number || "Not set";
-      document.querySelector("[data-student-form-class]").textContent = record.form_class || "Not set";
+      document.querySelector("[data-student-form-class]").textContent = (record.form_class || "").replace(/^SHS\s*/, "Year ") || "Not set";
       document.querySelector("[data-student-fees]").textContent = record.fees_status || "Not set";
       document.querySelector("[data-student-personal-index]").textContent = record.index_number || "Not set";
-      document.querySelector("[data-student-personal-class]").textContent = record.form_class || "Not set";
+      document.querySelector("[data-student-personal-class]").textContent = (record.form_class || "").replace(/^SHS\s*/, "Year ") || "Not set";
       document.querySelector("[data-student-personal-programme]").textContent = record.programme || "Not set";
       document.querySelector("[data-student-personal-residency]").textContent = record.residency || "Not set";
     }

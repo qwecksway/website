@@ -5,7 +5,26 @@
   var MAX_PHOTO_BYTES = 2 * 1024 * 1024;
   var PHOTO_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
   var CONTACT_PATTERN = /^[0-9+ ()-]{7,30}$/;
-  var PAGE_SIZE = 25;
+  var MAX_ROWS = 500;
+  var AREAS = ["AGRIC", "G.ARTS", "TECHNICAL", "HOME ECONOMICS", "BUSINESS"];
+  var PRINT_COLUMNS = [
+    { key: "name", label: "Name", on: true },
+    { key: "index_number", label: "CassRefID", on: true },
+    { key: "form_class", label: "Year", on: true },
+    { key: "programme", label: "Learning area", on: true },
+    { key: "gender", label: "Gender" },
+    { key: "date_of_birth", label: "Date of birth" },
+    { key: "residency", label: "Residency" },
+    { key: "place_of_birth", label: "Place of birth" },
+    { key: "hometown", label: "Hometown" },
+    { key: "guardian_name", label: "Guardian" },
+    { key: "guardian_contact", label: "Guardian contact" }
+  ];
+
+  function yearLabel(value) {
+    var match = /^SHS\s*([123])$/.exec(String(value || "").trim());
+    return match ? "Year " + match[1] : (value || "");
+  }
 
   function byId(id) { return document.getElementById(id); }
 
@@ -83,7 +102,23 @@
 
   /* ----------------------------- Admin side ----------------------------- */
 
-  var admin = { client: null, records: [], selected: null, lastSearch: null, bound: false };
+  var admin = { client: null, records: [], selected: null, lastSearch: null, searchRows: null, year: "", area: "", bound: false };
+
+  function matchesFilters(record) {
+    return (!admin.year || record.form_class === admin.year) && (!admin.area || record.programme === admin.area);
+  }
+
+  function renderCurrent() {
+    var base = admin.searchRows || admin.records;
+    var rows = base.filter(matchesFilters);
+    document.querySelectorAll("#sr-year-tabs [data-year]").forEach(function (button) {
+      var year = button.getAttribute("data-year");
+      var count = base.filter(function (record) { return !year || record.form_class === year; }).length;
+      button.textContent = (year ? yearLabel(year) : "All years") + " (" + count + ")";
+      button.classList.toggle("is-active", year === admin.year);
+    });
+    renderResults(rows.slice(0, MAX_ROWS), rows.length);
+  }
 
   function renderResults(rows, total) {
     var tbody = byId("sr-results");
@@ -92,7 +127,7 @@
     if (!rows.length) {
       var emptyRow = document.createElement("tr");
       var emptyCell = document.createElement("td");
-      emptyCell.colSpan = 5;
+      emptyCell.colSpan = 6;
       emptyCell.textContent = "No students match your search.";
       emptyRow.appendChild(emptyCell);
       tbody.appendChild(emptyRow);
@@ -110,7 +145,9 @@
       var indexCell = document.createElement("td");
       indexCell.textContent = record.index_number || "—";
       var classCell = document.createElement("td");
-      classCell.textContent = record.form_class || "—";
+      classCell.textContent = yearLabel(record.form_class) || "—";
+      var areaCell = document.createElement("td");
+      areaCell.textContent = record.programme || "—";
       var dobCell = document.createElement("td");
       dobCell.textContent = formatDate(record.date_of_birth);
       var actionCell = document.createElement("td");
@@ -120,14 +157,14 @@
       edit.textContent = "View / edit";
       edit.addEventListener("click", function () { openEditor(record); });
       actionCell.appendChild(edit);
-      row.append(nameCell, indexCell, classCell, dobCell, actionCell);
+      row.append(nameCell, indexCell, classCell, areaCell, dobCell, actionCell);
       tbody.appendChild(row);
     });
     if (typeof total === "number" && total > rows.length) {
       var more = document.createElement("tr");
       var moreCell = document.createElement("td");
-      moreCell.colSpan = 5;
-      moreCell.textContent = "Showing the first " + rows.length + " of " + total + " students. Use the search to find others.";
+      moreCell.colSpan = 6;
+      moreCell.textContent = "Showing the first " + rows.length + " of " + total + " students. Use the filters or search to narrow the list.";
       more.appendChild(moreCell);
       tbody.appendChild(more);
     }
@@ -135,8 +172,9 @@
 
   function showAll() {
     admin.lastSearch = null;
+    admin.searchRows = null;
     clearAlert(byId("sr-search-status"));
-    renderResults(admin.records.slice(0, PAGE_SIZE), admin.records.length);
+    renderCurrent();
   }
 
   async function runSearch(name, dob) {
@@ -156,7 +194,8 @@
     }
     admin.lastSearch = { name: name, dob: dob };
     var rows = result.data || [];
-    renderResults(rows);
+    admin.searchRows = rows;
+    renderCurrent();
     showAlert(
       status,
       rows.length ? rows.length + " student" + (rows.length === 1 ? "" : "s") + " found." + (rows.length === 50 ? " Showing the first 50; narrow the search." : "") : "No students match your search.",
@@ -170,6 +209,7 @@
     var search = admin.lastSearch;
     if (search) await runSearch(search.name, search.dob);
     else showAll();
+    updatePrintCount();
     if (admin.selected) {
       var updated = admin.records.find(function (record) { return record.id === admin.selected.id; });
       if (updated) admin.selected = updated;
@@ -178,7 +218,14 @@
 
   function setValue(id, value) {
     var element = byId(id);
-    if (element) element.value = value || "";
+    if (!element) return;
+    if (element.tagName === "SELECT" && value && !Array.prototype.some.call(element.options, function (o) { return o.value === value; })) {
+      var legacy = document.createElement("option");
+      legacy.value = value;
+      legacy.textContent = value + " (old value)";
+      element.appendChild(legacy);
+    }
+    element.value = value || "";
   }
 
   async function openEditor(record) {
@@ -315,7 +362,7 @@
       "YearOfEntry", "DOB", "Gender", "Place of Birth", "Hometown", "Guardian", "Guardian Contact"
     ];
     var example = [
-      "0071007", "Ama", "Serwaa", "Mensah", "ABC123456789", "GENERAL SCIENCE",
+      "0071007", "Ama", "Serwaa", "Mensah", "ABC123456789", "HOME ECONOMICS",
       "2026", "2010-05-14", "Female", "Kumasi", "Mampong", "Kofi Mensah", "0244000000"
     ];
     var content = "\uFEFF" + header.join(",") + "\r\n" + example.join(",") + "\r\n";
@@ -362,13 +409,152 @@
     byId("sr-tab-bulk").addEventListener("click", function () { selectAddTab("bulk"); });
     byId("sr-template-download").addEventListener("click", downloadTemplate);
     selectAddTab("single");
+    bindFilters();
+    bindPrint();
+  }
+
+  function bindFilters() {
+    document.querySelectorAll("#sr-year-tabs [data-year]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        admin.year = button.getAttribute("data-year");
+        renderCurrent();
+      });
+    });
+    byId("sr-filter-area").addEventListener("change", function (event) {
+      admin.area = event.target.value;
+      renderCurrent();
+    });
+  }
+
+  /* ------------------------------- Printing ------------------------------ */
+
+  function printRows() {
+    var year = byId("sr-print-year").value;
+    var area = byId("sr-print-area").value;
+    var residency = byId("sr-print-residency").value;
+    var gender = byId("sr-print-gender").value;
+    var rows = admin.records.filter(function (record) {
+      return (!year || record.form_class === year) && (!area || record.programme === area) &&
+        (!residency || record.residency === residency) && (!gender || record.gender === gender);
+    });
+    var sort = byId("sr-print-sort").value;
+    function nameKey(record) {
+      return ((record.last_name || "") + " " + (record.first_name || "") + " " + (record.full_name || "")).trim().toLowerCase();
+    }
+    rows.sort(function (a, b) {
+      if (sort === "index") return String(a.index_number || "").localeCompare(String(b.index_number || ""));
+      if (sort === "group") {
+        var g = String(a.form_class || "").localeCompare(String(b.form_class || "")) ||
+          String(a.programme || "").localeCompare(String(b.programme || ""));
+        if (g) return g;
+      }
+      return nameKey(a).localeCompare(nameKey(b));
+    });
+    return rows;
+  }
+
+  function updatePrintCount() {
+    var counter = byId("sr-print-count");
+    if (counter && byId("sr-print-form")) {
+      var count = printRows().length;
+      counter.textContent = count + " student" + (count === 1 ? "" : "s") + " selected";
+    }
+  }
+
+  function cellValue(record, key) {
+    if (key === "name") return displayName(record);
+    if (key === "form_class") return yearLabel(record.form_class);
+    if (key === "date_of_birth") return record.date_of_birth ? formatDate(record.date_of_birth) : "";
+    return record[key] || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function printList(event) {
+    event.preventDefault();
+    var status = byId("sr-print-status");
+    var columns = PRINT_COLUMNS.filter(function (column) { return byId("sr-print-col-" + column.key).checked; });
+    if (!columns.length) {
+      showAlert(status, "Choose at least one column to print.", "error");
+      return;
+    }
+    var rows = printRows();
+    if (!rows.length) {
+      showAlert(status, "No students match those choices.", "error");
+      return;
+    }
+    var parts = [];
+    if (byId("sr-print-year").value) parts.push(yearLabel(byId("sr-print-year").value));
+    if (byId("sr-print-area").value) parts.push(byId("sr-print-area").value);
+    if (byId("sr-print-residency").value) parts.push(byId("sr-print-residency").value);
+    if (byId("sr-print-gender").value) parts.push(byId("sr-print-gender").value);
+    var title = byId("sr-print-title").value.trim() || "Student list";
+    var subtitle = parts.length ? parts.join(" · ") : "All students";
+    var head = "<th>#</th>" + columns.map(function (c) { return "<th>" + escapeHtml(c.label) + "</th>"; }).join("");
+    var body = rows.map(function (record, index) {
+      return "<tr><td>" + (index + 1) + "</td>" + columns.map(function (c) {
+        return "<td>" + escapeHtml(cellValue(record, c.key)) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    var html = "<!doctype html><html><head><meta charset=\"utf-8\"><title>" + escapeHtml(title) + "</title><style>" +
+      "@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}" +
+      "h1{margin:0;font-size:18px;color:#0b2447}h2{margin:2px 0 0;font-size:14px}p{margin:2px 0 10px;color:#444}" +
+      ".top{border-bottom:2px solid #0b2447;padding-bottom:6px;margin-bottom:10px}" +
+      "table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:4px 6px;text-align:left}" +
+      "th{background:#e8edf5}tr{page-break-inside:avoid}thead{display:table-header-group}" +
+      "</style></head><body><div class=\"top\"><h1>AFASTECH</h1><h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(subtitle) +
+      " — " + rows.length + " student" + (rows.length === 1 ? "" : "s") + " — printed " + escapeHtml(new Date().toLocaleDateString("en-GB")) +
+      "</p></div><table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table></body></html>";
+    var win = window.open("", "_blank");
+    if (!win) {
+      showAlert(status, "Your browser blocked the print window. Allow pop-ups for this site and try again.", "error");
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.setTimeout(function () { win.print(); }, 300);
+    showAlert(status, "Print window opened. Choose \"Save as PDF\" as the destination to get a PDF.", "success");
+  }
+
+  function bindPrint() {
+    var holder = byId("sr-print-cols");
+    PRINT_COLUMNS.forEach(function (column) {
+      var label = document.createElement("label");
+      var box = document.createElement("input");
+      box.type = "checkbox";
+      box.id = "sr-print-col-" + column.key;
+      box.checked = !!column.on;
+      label.append(box, " " + column.label);
+      holder.appendChild(label);
+    });
+    byId("sr-print-form").addEventListener("submit", printList);
+    ["sr-print-year", "sr-print-area", "sr-print-residency", "sr-print-gender"].forEach(function (id) {
+      byId(id).addEventListener("change", updatePrintCount);
+    });
+    var toggle = byId("sr-print-toggle");
+    var panel = byId("sr-print-panel");
+    toggle.addEventListener("click", function () {
+      var open = panel.hidden;
+      panel.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.textContent = open ? "Close print" : "Print list";
+      if (open) { updatePrintCount(); panel.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    });
+    updatePrintCount();
   }
 
   function setRecords(rows) {
     admin.records = rows || [];
     if (!admin.bound) return;
     if (admin.lastSearch) return;
-    renderResults(admin.records.slice(0, PAGE_SIZE), admin.records.length);
+    renderCurrent();
+    updatePrintCount();
   }
 
   /* ---------------------------- Student side ---------------------------- */
@@ -393,11 +579,11 @@
     setText("[data-sp-last]", record.last_name);
     setText("[data-sp-dob]", record.date_of_birth ? formatDate(record.date_of_birth) : "");
     setText("[data-student-personal-index]", record.index_number);
-    setText("[data-student-personal-class]", record.form_class);
+    setText("[data-student-personal-class]", yearLabel(record.form_class));
     setText("[data-student-personal-programme]", record.programme);
     setText("[data-student-personal-residency]", record.residency);
     setText("[data-student-index]", record.index_number);
-    setText("[data-student-form-class]", record.form_class);
+    setText("[data-student-form-class]", yearLabel(record.form_class));
     setText("[data-student-programme]", record.programme);
     setText("[data-student-residency]", record.residency);
 
