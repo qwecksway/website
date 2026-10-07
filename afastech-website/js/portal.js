@@ -668,8 +668,12 @@
     var departments = [
       "MATHS/ICT", "SCIENCE", "ENGLISH", "BUSINESS", "TECHNICAL", "HOME ECONOMICS"
     ];
+    var picker = document.getElementById("admin-staff-picker");
+    var rowsById = {};
     staff.forEach(function (member) {
       var row = document.createElement("tr");
+      row.hidden = true;
+      rowsById[member.id] = row;
       var identity = document.createElement("td");
       var titleCell = document.createElement("td");
       var departmentCell = document.createElement("td");
@@ -765,6 +769,29 @@
       row.append(identity, titleCell, departmentCell, actionCell);
       tbody.appendChild(row);
     });
+
+    var previous = picker.value;
+    picker.replaceChildren();
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select a staff member…";
+    picker.appendChild(placeholder);
+    staff.slice().sort(function (a, b) {
+      return String(a.full_name || a.email || "").localeCompare(String(b.full_name || b.email || ""));
+    }).forEach(function (member) {
+      var option = document.createElement("option");
+      option.value = member.id;
+      option.textContent = (member.full_name || "Unnamed") + (member.email ? " — " + member.email : "");
+      picker.appendChild(option);
+    });
+    var tableWrap = tbody.closest("table").parentElement;
+    function showSelected() {
+      Object.keys(rowsById).forEach(function (id) { rowsById[id].hidden = id !== picker.value; });
+      tableWrap.hidden = !picker.value;
+    }
+    picker.onchange = showSelected;
+    if (rowsById[previous]) picker.value = previous;
+    showSelected();
   }
 
   function bindAdminAcademicForm(client, formId, rpcName, argsFactory) {
@@ -2065,7 +2092,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
     });
   }
 
-  function showForcedPasswordChange(client) {
+  function showForcedPasswordChange(client, intro) {
     return new Promise(function (resolve) {
       var overlay = document.createElement("div");
       overlay.setAttribute("role", "dialog");
@@ -2073,7 +2100,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
       overlay.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.85);display:flex;align-items:center;justify-content:center;padding:1rem;";
       overlay.innerHTML = '<form class="card" style="max-width:420px;width:100%;background:#fff;padding:2rem;border-radius:12px;">' +
         "<h2>Set a new password</h2>" +
-        "<p>You signed in with a temporary password. Choose a new password to continue.</p>" +
+        "<p>" + (intro || "You signed in with a temporary password. Choose a new password to continue.") + "</p>" +
         '<div class="field"><label for="force-new-password">New password (at least 10 characters)</label><input type="password" id="force-new-password" minlength="10" autocomplete="new-password" required></div>' +
         '<div class="field"><label for="force-confirm-password">Confirm new password</label><input type="password" id="force-confirm-password" minlength="10" autocomplete="new-password" required></div>' +
         '<button class="btn btn-primary" type="submit">Save password</button>' +
@@ -2103,7 +2130,47 @@ if (typeof window.initializeTranscriptImporter === "function") {
     });
   }
 
-  async function initializeDashboard(client, page) {    var requiredRole = page === "staff-dashboard" ? "staff" : page === "admin-dashboard" ? "admin" : "student";
+  function initializePasswordReset(client, loginForm) {
+    if (!client || loginForm.getAttribute("data-portal") !== "staff") return;
+    var alertBox = document.getElementById("portal-alert");
+    var link = document.getElementById("portal-forgot");
+    var recovering = false;
+
+    client.auth.onAuthStateChange(function (event) {
+      if (event !== "PASSWORD_RECOVERY" || recovering) return;
+      recovering = true;
+      setTimeout(async function () {
+        await showForcedPasswordChange(client, "Choose a new password for your Staff Portal account.");
+        await client.auth.signOut({ scope: "local" });
+        window.location.replace(window.location.pathname + "?reset=done");
+      }, 0);
+    });
+    if (/[?&]reset=done/.test(window.location.search)) {
+      showAlert(alertBox, "Password changed. Sign in with your new password.", "success");
+    }
+    if (!link) return;
+    link.addEventListener("click", async function (event) {
+      event.preventDefault();
+      var email = loginForm.querySelector("#portalId").value.trim().toLowerCase();
+      if (!email || email.indexOf("@") === -1) {
+        showAlert(alertBox, "Enter your school email above, then click Forgot password.", "error");
+        return;
+      }
+      showAlert(alertBox, "Sending reset link…", "success");
+      try {
+        var result = await client.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname
+        });
+        if (result.error) throw result.error;
+        showAlert(alertBox, "If that email belongs to a staff account, a password reset link has been sent. Check your inbox.", "success");
+      } catch (error) {
+        showAlert(alertBox, "The reset link could not be sent. Try again later or contact the administrator.", "error");
+      }
+    });
+  }
+
+  async function initializeDashboard(client, page) {
+    var requiredRole = page === "staff-dashboard" ? "staff" : page === "admin-dashboard" ? "admin" : "student";
     var alertBox = document.getElementById("portal-data-alert");
     if (!client) {
       window.location.replace(LOGIN_PAGES[requiredRole]);
@@ -2190,7 +2257,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
 
   var loginForm = document.getElementById("portal-login");
   var client = createClient();
-  if (loginForm) initializeLogin(client, loginForm);
+  if (loginForm) { initializeLogin(client, loginForm); initializePasswordReset(client, loginForm); }
 
   var page = document.body.getAttribute("data-page");
   if (page === "student-dashboard" || page === "staff-dashboard" || page === "admin-dashboard") initializeDashboard(client, page);
