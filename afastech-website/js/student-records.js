@@ -102,30 +102,65 @@
 
   /* ----------------------------- Admin side ----------------------------- */
 
-  var admin = { client: null, records: [], selected: null, lastSearch: null, searchRows: null, selected_ids: {}, year: "", area: "", bound: false };
+  var admin = { client: null, records: [], selected: null, lastSearch: null, searchRows: null, selected_ids: {}, year: "", area: "", applied: false, bound: false };
 
   function matchesFilters(record) {
     return (!admin.year || record.form_class === admin.year) && (!admin.area || record.programme === admin.area);
   }
 
   function renderCurrent() {
+    var wrap = byId("sr-results-wrap");
+    var empty = byId("sr-empty-state");
+    if (!admin.applied) {
+      if (wrap) wrap.hidden = true;
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (wrap) wrap.hidden = false;
+    if (empty) empty.hidden = true;
     var base = admin.searchRows || admin.records;
     var rows = base.filter(matchesFilters);
-    document.querySelectorAll("#sr-year-tabs [data-year]").forEach(function (button) {
-      var year = button.getAttribute("data-year");
-      var count = base.filter(function (record) { return !year || record.form_class === year; }).length;
-      button.textContent = (year ? yearLabel(year) : "All years") + " (" + count + ")";
-      button.classList.toggle("is-active", year === admin.year);
-    });
     admin.shownIds = rows.slice(0, MAX_ROWS).map(function (record) { return record.id; });
     renderResults(rows.slice(0, MAX_ROWS), rows.length);
     updateSelectionUi();
   }
 
+  function applyFilters() {
+    admin.year = byId("sr-filter-year").value;
+    admin.area = byId("sr-filter-area").value;
+    admin.applied = true;
+    var name = byId("sr-search-name").value.trim();
+    var dob = byId("sr-search-dob").value;
+    if (name || dob) return runSearch(name, dob);
+    admin.lastSearch = null;
+    admin.searchRows = null;
+    renderCurrent();
+    var count = admin.shownIds.length;
+    var total = admin.records.filter(matchesFilters).length;
+    showAlert(byId("sr-search-status"), total ? total + " student" + (total === 1 ? "" : "s") + " found." : "No students match those filters.", total ? "success" : "error");
+  }
+
+  function resetFilters() {
+    byId("sr-search-name").value = "";
+    byId("sr-search-dob").value = "";
+    byId("sr-filter-year").value = "";
+    byId("sr-filter-area").value = "";
+    admin.year = "";
+    admin.area = "";
+    admin.applied = false;
+    admin.lastSearch = null;
+    admin.searchRows = null;
+    admin.selected_ids = {};
+    clearAlert(byId("sr-search-status"));
+    clearAlert(byId("sr-move-status"));
+    renderCurrent();
+  }
   function updateSelectionUi() {
     var count = Object.keys(admin.selected_ids).length;
     var counter = byId("sr-selected-count");
     if (counter) counter.textContent = count + " selected";
+    var group = byId("sr-move-group");
+    if (group) group.hidden = count === 0;
     var shown = admin.shownIds || [];
     var allShown = shown.length > 0 && shown.every(function (id) { return admin.selected_ids[id]; });
     var master = byId("sr-check-all");
@@ -231,19 +266,8 @@
     }
   }
 
-  function showAll() {
-    admin.lastSearch = null;
-    admin.searchRows = null;
-    clearAlert(byId("sr-search-status"));
-    renderCurrent();
-  }
-
   async function runSearch(name, dob) {
     var status = byId("sr-search-status");
-    if (!name && !dob) {
-      showAlert(status, "Enter a first name, last name, or date of birth to search.", "error");
-      return;
-    }
     showAlert(status, "Searching…", "success");
     var result = await admin.client.rpc("admin_search_students", {
       target_query: name || null,
@@ -257,10 +281,11 @@
     var rows = result.data || [];
     admin.searchRows = rows;
     renderCurrent();
+    var matched = rows.filter(matchesFilters).length;
     showAlert(
       status,
-      rows.length ? rows.length + " student" + (rows.length === 1 ? "" : "s") + " found." + (rows.length === 50 ? " Showing the first 50; narrow the search." : "") : "No students match your search.",
-      rows.length ? "success" : "error"
+      matched ? matched + " student" + (matched === 1 ? "" : "s") + " found." + (rows.length === 50 ? " Showing the first 50; narrow the search." : "") : "No students match your search.",
+      matched ? "success" : "error"
     );
   }
 
@@ -269,7 +294,7 @@
     if (!all.error) admin.records = all.data || [];
     var search = admin.lastSearch;
     if (search) await runSearch(search.name, search.dob);
-    else showAll();
+    else renderCurrent();
     updatePrintCount();
     if (admin.selected) {
       var updated = admin.records.find(function (record) { return record.id === admin.selected.id; });
@@ -437,13 +462,9 @@
 
     byId("sr-search-form").addEventListener("submit", function (event) {
       event.preventDefault();
-      runSearch(byId("sr-search-name").value.trim(), byId("sr-search-dob").value);
+      applyFilters();
     });
-    byId("sr-search-all").addEventListener("click", function () {
-      byId("sr-search-name").value = "";
-      byId("sr-search-dob").value = "";
-      showAll();
-    });
+    byId("sr-search-all").addEventListener("click", resetFilters);
     byId("sr-edit-form").addEventListener("submit", saveEditor);
     byId("sr-editor-close").addEventListener("click", closeEditor);
     byId("sr-edit-cancel").addEventListener("click", closeEditor);
@@ -494,16 +515,6 @@
       setShownSelected(false);
     });
     byId("sr-move-apply").addEventListener("click", moveSelected);
-    document.querySelectorAll("#sr-year-tabs [data-year]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        admin.year = button.getAttribute("data-year");
-        renderCurrent();
-      });
-    });
-    byId("sr-filter-area").addEventListener("change", function (event) {
-      admin.area = event.target.value;
-      renderCurrent();
-    });
   }
 
   /* ------------------------------- Printing ------------------------------ */

@@ -95,46 +95,56 @@
             </div>
             <div class="sr-head-actions"><button type="button" class="btn btn-outline" data-sr-back>&larr; Back to Students</button></div>
           </div>
-          <form id="sr-search-form" class="sr-search" role="search">
-            <div class="field">
-              <label for="sr-search-name">First name or last name</label>
-              <input id="sr-search-name" type="search" maxlength="80" autocomplete="off" placeholder="e.g. Ama or Mensah">
+          <form id="sr-search-form" class="sr-filter-panel" role="search">
+            <div class="sr-search-row">
+              <div class="field sr-search-main">
+                <label for="sr-search-name">Search by name</label>
+                <input id="sr-search-name" type="search" maxlength="80" autocomplete="off" placeholder="First name or last name">
+              </div>
+              <div class="field">
+                <label for="sr-search-dob">Date of birth</label>
+                <input id="sr-search-dob" type="date">
+              </div>
             </div>
-            <div class="field">
-              <label for="sr-search-dob">Date of birth</label>
-              <input id="sr-search-dob" type="date">
-            </div>
-            <div class="sr-search-actions">
-              <button class="btn btn-primary" type="submit">Search</button>
-              <button id="sr-search-all" class="btn btn-outline" type="button">Show all</button>
+            <div class="sr-search-row">
+              <div class="field">
+                <label for="sr-filter-year">Year</label>
+                <select id="sr-filter-year"><option value="">All years</option><option value="SHS 1">Year 1</option><option value="SHS 2">Year 2</option><option value="SHS 3">Year 3</option></select>
+              </div>
+              <div class="field">
+                <label for="sr-filter-area">Learning area</label>
+                <select id="sr-filter-area"><option value="">All learning areas</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select>
+              </div>
+              <div class="sr-search-actions">
+                <button class="btn btn-primary" type="submit">Filter students</button>
+                <button id="sr-search-all" class="btn btn-outline" type="button">Reset</button>
+              </div>
             </div>
           </form>
           <p id="sr-search-status" class="alert" role="status"></p>
-          <div class="sr-filters">
-            <div id="sr-year-tabs" class="sr-year-tabs" role="group" aria-label="Filter by year">
-              <button type="button" class="sr-tab is-active" data-year="">All years</button>
-              <button type="button" class="sr-tab" data-year="SHS 1">Year 1</button>
-              <button type="button" class="sr-tab" data-year="SHS 2">Year 2</button>
-              <button type="button" class="sr-tab" data-year="SHS 3">Year 3</button>
+          <div id="sr-empty-state" class="sr-empty-state">
+            <strong>No students shown yet</strong>
+            <span>Choose a year and learning area (or search by name), then click <em>Filter students</em>.</span>
+          </div>
+          <div id="sr-results-wrap" hidden>
+            <div id="sr-bulkbar" class="sr-bulkbar">
+              <span id="sr-selected-count" class="sr-selected-count">0 selected</span>
+              <button id="sr-select-visible" class="btn btn-outline" type="button">Select all shown</button>
+              <button id="sr-select-none" class="btn btn-outline" type="button">Clear</button>
+              <span class="sr-bulk-spacer"></span>
+              <div id="sr-move-group" class="sr-move-group" hidden>
+                <label for="sr-move-year" class="sr-move-label">Move selected to</label>
+                <select id="sr-move-year"><option value="">Choose year</option><option value="SHS 1">Year 1</option><option value="SHS 2">Year 2</option><option value="SHS 3">Year 3</option></select>
+                <button id="sr-move-apply" class="btn btn-primary" type="button">Move students</button>
+              </div>
             </div>
-            <div class="field sr-area-filter"><label for="sr-filter-area">Learning area</label>
-              <select id="sr-filter-area"><option value="">All learning areas</option><option value="AGRIC">AGRIC</option><option value="G.ARTS">G.ARTS</option><option value="TECHNICAL">TECHNICAL</option><option value="HOME ECONOMICS">HOME ECONOMICS</option><option value="BUSINESS">BUSINESS</option></select></div>
-          </div>
-          <div id="sr-bulkbar" class="sr-bulkbar">
-            <span id="sr-selected-count" class="sr-selected-count">0 selected</span>
-            <button id="sr-select-visible" class="btn btn-outline" type="button">Select all shown</button>
-            <button id="sr-select-none" class="btn btn-outline" type="button">Clear</button>
-            <span class="sr-bulk-spacer"></span>
-            <label for="sr-move-year" class="sr-move-label">Move selected to</label>
-            <select id="sr-move-year"><option value="">Choose year</option><option value="SHS 1">Year 1</option><option value="SHS 2">Year 2</option><option value="SHS 3">Year 3</option></select>
-            <button id="sr-move-apply" class="btn btn-primary" type="button">Move students</button>
-          </div>
-          <p id="sr-move-status" class="alert" role="status"></p>
-          <div style="overflow-x:auto;">
-            <table class="data-table">
-              <thead><tr><th class="sr-check-col"><input type="checkbox" id="sr-check-all" aria-label="Select all shown students"></th><th>Student</th><th>CassRefID</th><th>Year</th><th>Learning area</th><th>Date of birth</th><th>Action</th></tr></thead>
-              <tbody id="sr-results"></tbody>
-            </table>
+            <p id="sr-move-status" class="alert" role="status"></p>
+            <div class="sr-table-wrap">
+              <table class="data-table">
+                <thead><tr><th class="sr-check-col"><input type="checkbox" id="sr-check-all" aria-label="Select all shown students"></th><th>Student</th><th>CassRefID</th><th>Year</th><th>Learning area</th><th>Date of birth</th><th>Action</th></tr></thead>
+                <tbody id="sr-results"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 

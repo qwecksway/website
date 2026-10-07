@@ -5133,3 +5133,17 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sr-move-label{font-size:.85rem;font-weight:600;color:#334155}
 .sr-check-col{width:42px;text-align:center}
 .sr-check-col input{width:18px;height:18px;cursor:pointer}
+
+/* Browse students: filter panel */
+.sr-filter-panel{display:grid;gap:1rem;padding:1.25rem 1.4rem;margin-bottom:1.25rem;background:#f8faff;border:1px solid #e3e9f3;border-radius:14px}
+.sr-search-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;align-items:end}
+.sr-search-row .field{margin:0}
+.sr-search-main{grid-column:span 2}
+.sr-search-actions{display:flex;gap:.6rem;justify-content:flex-end}
+.sr-empty-state{display:grid;gap:.35rem;justify-items:center;text-align:center;padding:2.75rem 1rem;border:1.5px dashed #cfd8e8;border-radius:14px;color:#64748b;background:#fcfdff}
+.sr-empty-state strong{color:#0b1b34;font-size:1.05rem}
+.sr-empty-state[hidden],#sr-results-wrap[hidden],.sr-move-group[hidden]{display:none}
+.sr-move-group{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.sr-table-wrap{overflow-x:auto;border-radius:12px}
+.sr-bulkbar{background:#fff;box-shadow:0 1px 2px rgba(16,26,42,.04)}
+@media (max-width:700px){.sr-search-main{grid-column:auto}.sr-search-actions{justify-content:stretch}}
