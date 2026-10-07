@@ -5147,3 +5147,5 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sr-table-wrap{overflow-x:auto;border-radius:12px}
 .sr-bulkbar{background:#fff;box-shadow:0 1px 2px rgba(16,26,42,.04)}
 @media (max-width:700px){.sr-search-main{grid-column:auto}.sr-search-actions{justify-content:stretch}}
+
+.sr-form[hidden],#sr-bulk-panel[hidden],#admin-student-single-form[hidden]{display:none !important}
