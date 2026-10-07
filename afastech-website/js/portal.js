@@ -1,4 +1,5 @@
 (function () {
+  
   "use strict";
 
   var LOGIN_PAGES = {
@@ -95,6 +96,8 @@
     var greeting = document.querySelector("[data-portal-user]");
     var fullName = profile.full_name || "";
     if (greeting) greeting.textContent = fullName || email || "User";
+    var avatar = document.querySelector("[data-portal-avatar]");
+    if (avatar) avatar.textContent = (fullName || email || "U").trim().charAt(0).toUpperCase();
     var firstName = document.querySelector("[data-student-first-name]");
     if (firstName) firstName.textContent = fullName ? fullName.split(/\s+/)[0] : "Student";
     var studentName = document.querySelector("[data-student-full-name]");
@@ -116,7 +119,8 @@
       client.from("timetable_entries").select("weekday, morning, afternoon").eq("student_id", userId).order("weekday"),
       client.rpc("student_list_my_academic_results"),
       client.from("portal_announcements").select("title, body, published_at").or("audience.eq.all,audience.eq.student").order("published_at", { ascending: false }).limit(10),
-      client.rpc("student_list_my_academic_subjects")
+      client.rpc("student_list_my_academic_subjects"),
+      client.rpc("student_list_my_transcript_entries")
     ]);
     var error = results.find(function (result) { return result.error; });
     if (error) throw error.error;
@@ -167,11 +171,19 @@
       function (row) { return [row.class_name, row.programme_name].filter(Boolean).join(" · "); },
       function (row) { return row.academic_year_name; }
     ]);
+    renderRows(document.getElementById("student-transcripts"), results[5].data || [], [
+      function (row) { return "Year " + row.year_level; },
+      function (row) { return "Semester " + row.semester_no; },
+      function (row) { return row.subject_name; },
+      function (row) { return row.grade_point_average == null ? "—" : String(row.grade_point_average); },
+      function (row) { return row.final_grade || "—"; }
+    ]);
     renderAnnouncements(results[3].data || []);
     if (!record) showEmptyState(document.getElementById("student-data-status"), "Your school record has not been added yet.");
     if (!results[1].data.length) showEmptyState(document.getElementById("student-timetable-status"), "No timetable entries are available.");
     if (!results[2].data.length) showEmptyState(document.getElementById("student-results-status"), "No results are available.");
     if (!results[4].data.length) showEmptyState(document.getElementById("student-subjects-status"), "Your current class and subject enrolment has not been set up yet.");
+    if (!results[5].data.length) showEmptyState(document.getElementById("student-transcripts-status"), "No published transcript records are available.");
   }
 
   async function loadStaffDashboard(client, userId) {
@@ -186,6 +198,10 @@
     if (houseFeeAccess.error) throw houseFeeAccess.error;
     var houseFeesSection = document.getElementById("house-fees");
     houseFeesSection.hidden = !houseFeeAccess.data;
+    var houseFeesView = document.getElementById("view-house-fees");
+    var houseFeesNav = document.getElementById("staff-house-nav");
+    houseFeesView.dataset.viewDisabled = String(!houseFeeAccess.data);
+    houseFeesNav.hidden = !houseFeeAccess.data;
     if (houseFeeAccess.data) {
       await loadFeeRecords(client, "staff-house-fees", "staff-house-fees-status");
     }
@@ -226,6 +242,29 @@
       showEmptyState(document.getElementById("staff-assignments-status"), "");
     }
 
+    // Load assessment types
+    var assessmentTypeSelect = document.getElementById("staff-academic-assessment-type");
+    var weightingInput = document.getElementById("staff-academic-assessment-weighting");
+    if (assessmentTypeSelect && !assessmentTypeSelect.dataset.atLoaded) {
+      try {
+        var atResult = await client.rpc("list_active_assessment_types");
+        if (atResult.error) throw atResult.error;
+        setSelectOptions(assessmentTypeSelect, atResult.data || [], "Choose assessment type", "id", function (item) {
+          return item.name + " (" + item.short_code + ") \u2014 " + item.default_weighting + "% default";
+        });
+        assessmentTypeSelect.dataset.atLoaded = "true";
+        // Auto-set weighting when type changes
+        assessmentTypeSelect.addEventListener("change", function () {
+          var selected = (atResult.data || []).find(function (item) { return item.id === assessmentTypeSelect.value; });
+          if (selected && weightingInput) {
+            weightingInput.value = selected.default_weighting;
+          }
+        });
+      } catch (error) {
+        console.warn("Could not load assessment types:", error);
+      }
+    }
+
     if (!createForm.dataset.academicBound) {
       createForm.dataset.academicBound = "true";
       assignmentSelect.addEventListener("change", async function () {
@@ -260,7 +299,9 @@
             target_class_subject_id: assignmentSelect.value,
             target_term_id: document.getElementById("staff-academic-term").value,
             target_title: document.getElementById("staff-academic-assessment-title").value,
-            target_max_score: Number(document.getElementById("staff-academic-assessment-max").value)
+            target_max_score: Number(document.getElementById("staff-academic-assessment-max").value),
+            target_assessment_type_id: assessmentTypeSelect ? assessmentTypeSelect.value : null,
+            target_weighting: weightingInput ? Number(weightingInput.value) : 100
           });
           if (saved.error) throw saved.error;
         } catch (error) {
@@ -479,7 +520,8 @@
       client.rpc("admin_list_houses"),
       client.rpc("list_house_fee_records"),
       client.rpc("admin_list_house_assignable_people"),
-      client.rpc("admin_list_staff_details")
+      client.rpc("admin_list_staff_details"),
+      client.rpc("admin_list_student_details")
     ]);
     var error = results.find(function (result) { return result.error; });
     if (error) throw error.error;
@@ -490,9 +532,16 @@
     document.querySelector("[data-admin-staff-count]").textContent = String(
       profiles.filter(function (profile) { return profile.role === "staff"; }).length
     );
+    var studentCount = document.querySelector("[data-admin-student-count]");
+    if (studentCount) {
+      studentCount.textContent = String(
+        profiles.filter(function (profile) { return profile.role === "student"; }).length
+      );
+    }
     renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client);
     renderAdminHouseControls(client, results[3].data || [], houses);
     renderAdminStaffDetails(client, results[4].data || []);
+    renderAdminStudentDetails(client, results[5].data || []);
 
     var tbody = document.getElementById("admin-profiles");
     tbody.replaceChildren();
@@ -595,13 +644,22 @@
       var titleCell = document.createElement("td");
       var departmentCell = document.createElement("td");
       var actionCell = document.createElement("td");
+      var nameInput = document.createElement("input");
       var titleSelect = document.createElement("select");
       titleSelect.multiple = true;
       titleSelect.size = 4;
+      titleSelect.required = true;
       titleSelect.setAttribute("aria-label", "Job titles for " + (member.full_name || "staff member"));
       var departmentSelect = document.createElement("select");
       var save = document.createElement("button");
-      identity.textContent = (member.full_name || "Staff member") + " — " + member.email;
+      nameInput.type = "text";
+      nameInput.maxLength = 120;
+      nameInput.required = true;
+      nameInput.value = member.full_name || "";
+      nameInput.setAttribute("aria-label", "Name for " + (member.email || "staff member"));
+      var emailLabel = document.createElement("small");
+      emailLabel.textContent = member.email || "No email";
+      identity.append(nameInput, emailLabel);
 
       titles.forEach(function (title) {
         var option = document.createElement("option");
@@ -631,27 +689,116 @@
       save.type = "button";
       save.textContent = "Save";
       save.addEventListener("click", async function () {
+        if (!nameInput.reportValidity() || !titleSelect.reportValidity()) return;
         save.disabled = true;
         try {
-          var update = await client.rpc("admin_update_staff_details", {
+          var update = await client.rpc("admin_update_staff_account_details", {
             target_staff_id: member.id,
+            target_full_name: nameInput.value.trim(),
             target_position: Array.from(titleSelect.selectedOptions).map(function (option) {
               return option.value;
             }).join(", "),
             target_department: departmentSelect.value
           });
           if (update.error) throw update.error;
-          showAlert(document.getElementById("portal-data-alert"), "Staff job details updated.", "success");
-          await loadAdminDashboard(client);
+          showAlert(document.getElementById("portal-data-alert"), "Staff record saved to the database.", "success");
         } catch (error) {
           save.disabled = false;
-          showAlert(document.getElementById("portal-data-alert"), "Staff details could not be updated. Choose a valid job title and try again.", "error");
+          showAlert(document.getElementById("portal-data-alert"), "Staff record could not be saved. Check the name, job titles, department, and connection, then try again.", "error");
+          return;
+        }
+        try {
+          await loadAdminDashboard(client);
+        } catch (error) {
+          showAlert(document.getElementById("portal-data-alert"), "The staff record was saved, but the account list could not be refreshed. Reload the page.", "error");
         }
       });
+      nameInput.className = "admin-record-name";
       titleCell.appendChild(titleSelect);
       departmentCell.appendChild(departmentSelect);
       actionCell.appendChild(save);
       row.append(identity, titleCell, departmentCell, actionCell);
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderAdminStudentDetails(client, students) {
+    var tbody = document.getElementById("admin-student-details");
+    tbody.replaceChildren();
+    if (!students.length) {
+      appendMessageRow(tbody, 6, "No student accounts are available.");
+      return;
+    }
+
+    students.forEach(function (student) {
+      var row = document.createElement("tr");
+      var nameCell = document.createElement("td");
+      var nameInput = document.createElement("input");
+      var email = document.createElement("small");
+      var fields = [
+        { value: student.index_number, label: "CassRefID", maxLength: 12, required: true },
+        { value: student.programme, label: "Programme", maxLength: 120, required: true },
+        { value: student.residency, label: "Residency", maxLength: 80, required: false },
+        { value: student.form_class, label: "Class", maxLength: 40, required: false }
+      ];
+      var inputs = fields.map(function (field) {
+        var input = document.createElement("input");
+        input.type = "text";
+        input.value = field.value || "";
+        input.maxLength = field.maxLength;
+        input.required = field.required;
+        input.setAttribute("aria-label", field.label + " for " + (student.full_name || "student"));
+        return input;
+      });
+      var saveCell = document.createElement("td");
+      var save = document.createElement("button");
+
+      nameInput.type = "text";
+      nameInput.maxLength = 120;
+      nameInput.required = true;
+      nameInput.value = student.full_name || "";
+      nameInput.setAttribute("aria-label", "Name for " + (student.email || "student"));
+      nameInput.className = "admin-record-name";
+      email.textContent = student.email || "No email";
+      nameCell.append(nameInput, email);
+      save.className = "btn btn-outline";
+      save.type = "button";
+      save.textContent = "Save";
+      save.addEventListener("click", async function () {
+        if (!nameInput.reportValidity() || inputs.some(function (input) {
+          return !input.reportValidity();
+        })) return;
+        save.disabled = true;
+        try {
+          var update = await client.rpc("admin_update_student_details", {
+            target_student_id: student.id,
+            target_full_name: nameInput.value.trim(),
+            target_index_number: inputs[0].value.trim(),
+            target_programme: inputs[1].value.trim(),
+            target_residency: inputs[2].value.trim(),
+            target_form_class: inputs[3].value.trim()
+          });
+          if (update.error) throw update.error;
+          showAlert(document.getElementById("portal-data-alert"), "Student record saved to the database.", "success");
+        } catch (error) {
+          save.disabled = false;
+          showAlert(document.getElementById("portal-data-alert"), "Student record could not be saved. Check the required fields and connection, then try again.", "error");
+          return;
+        }
+        try {
+          await loadAdminDashboard(client);
+        } catch (error) {
+          showAlert(document.getElementById("portal-data-alert"), "The student record was saved, but the account list could not be refreshed. Reload the page.", "error");
+        }
+      });
+      row.appendChild(nameCell);
+      inputs.forEach(function (input) {
+        var cell = document.createElement("td");
+        cell.appendChild(input);
+        row.appendChild(cell);
+      });
+      saveCell.appendChild(save);
+      row.appendChild(saveCell);
       tbody.appendChild(row);
     });
   }
@@ -731,6 +878,12 @@
     setSelectOptions(document.getElementById("admin-academic-student"), students, "Choose a student", "id", function (item) {
       return item.index_number ? item.full_name + " — " + item.index_number : item.full_name || "Student";
     });
+if (typeof window.initializeTranscriptImporter === "function") {
+        window.initializeTranscriptImporter(client, students);
+      }
+      if (typeof window.initializeBatchResultImporter === "function") {
+        window.initializeBatchResultImporter(client, data.assessments || []);
+      }
     setSelectOptions(document.getElementById("admin-academic-allocation-teacher"), staff, "Unassigned", "id", function (item) {
       return item.full_name || "Staff member";
     });
@@ -803,6 +956,305 @@
         target_teacher_id: document.getElementById("admin-academic-allocation-teacher").value || null
       };
     });
+
+    // Load assessment types
+    await loadAdminAssessmentTypes(client);
+    // Load grade scales
+    await loadAdminGradeScales(client);
+  }
+
+  async function loadAdminAssessmentTypes(client) {
+    var result = await client.rpc("admin_list_assessment_types");
+    if (result.error) throw result.error;
+    renderAdminAssessmentTypes(client, result.data || []);
+  }
+
+  async function loadAdminGradeScales(client) {
+    var result = await client.rpc("admin_list_grade_scales");
+    if (result.error) throw result.error;
+    renderAdminGradeScales(client, result.data || []);
+  }
+
+  function renderAdminAssessmentTypes(client, types) {
+    var tbody = document.getElementById("admin-assessment-type-list");
+    if (!tbody) return;
+    tbody.replaceChildren();
+
+    var form = document.getElementById("admin-assessment-type-form");
+    var status = document.getElementById("admin-at-status");
+    if (form && !form.dataset.atBound) {
+      form.dataset.atBound = "true";
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = form.querySelector("button[type='submit']");
+        button.disabled = true;
+        try {
+          var saved = await client.rpc("admin_save_assessment_type", {
+            target_name: document.getElementById("admin-at-name").value,
+            target_short_code: document.getElementById("admin-at-code").value,
+            target_description: document.getElementById("admin-at-description").value || null,
+            target_default_weighting: Number(document.getElementById("admin-at-weighting").value),
+            target_display_order: Number(document.getElementById("admin-at-order").value),
+            target_is_active: document.getElementById("admin-at-active").checked
+          });
+          if (saved.error) throw saved.error;
+          form.reset();
+          document.getElementById("admin-at-active").checked = true;
+          showAlert(status, "Assessment type saved.", "success");
+        } catch (error) {
+          showAlert(status, "Assessment type could not be saved. Check the values and try again.", "error");
+          button.disabled = false;
+          return;
+        }
+        try {
+          await loadAdminAssessmentTypes(client);
+        } catch (error) {
+          showAlert(status, "Assessment type was saved, but the list could not be refreshed.", "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
+    if (!types.length) {
+      appendMessageRow(tbody, 7, "No assessment types defined yet.");
+      return;
+    }
+
+    types.forEach(function (type) {
+      var row = document.createElement("tr");
+      [type.name, type.short_code, type.description || "—",
+       type.default_weighting + "%", type.display_order,
+       type.is_active ? "Yes" : "No"].forEach(function (value) {
+        var cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      var actionCell = document.createElement("td");
+      var editBtn = document.createElement("button");
+      editBtn.className = "btn btn-outline";
+      editBtn.type = "button";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", function () {
+        document.getElementById("admin-at-name").value = type.name;
+        document.getElementById("admin-at-code").value = type.short_code;
+        document.getElementById("admin-at-description").value = type.description || "";
+        document.getElementById("admin-at-weighting").value = type.default_weighting;
+        document.getElementById("admin-at-order").value = type.display_order;
+        document.getElementById("admin-at-active").checked = type.is_active;
+        document.getElementById("admin-at-name").focus();
+        window.scrollTo({ top: form.offsetTop - 100, behavior: "smooth" });
+      });
+      actionCell.appendChild(editBtn);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderAdminGradeScales(client, scales) {
+    var host = document.getElementById("admin-grade-scale-list");
+    if (!host) return;
+    host.replaceChildren();
+
+    var form = document.getElementById("admin-grade-scale-form");
+    var status = document.getElementById("admin-gs-status");
+    if (form && !form.dataset.gsBound) {
+      form.dataset.gsBound = "true";
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = form.querySelector("button[type='submit']");
+        button.disabled = true;
+        try {
+          var saved = await client.rpc("admin_save_grade_scale", {
+            target_name: document.getElementById("admin-gs-name").value,
+            target_description: document.getElementById("admin-gs-description").value || null,
+            target_is_default: document.getElementById("admin-gs-default").checked,
+            target_is_active: document.getElementById("admin-gs-active").checked
+          });
+          if (saved.error) throw saved.error;
+          form.reset();
+          document.getElementById("admin-gs-active").checked = true;
+          showAlert(status, "Grade scale saved.", "success");
+        } catch (error) {
+          showAlert(status, "Grade scale could not be saved. Check the values and try again.", "error");
+          button.disabled = false;
+          return;
+        }
+        try {
+          await loadAdminGradeScales(client);
+        } catch (error) {
+          showAlert(status, "Grade scale was saved, but the list could not be refreshed.", "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
+    if (!scales.length) {
+      var empty = document.createElement("p");
+      empty.style.color = "var(--stone)";
+      empty.textContent = "No grade scales defined yet.";
+      host.appendChild(empty);
+      return;
+    }
+
+    scales.forEach(function (scale) {
+      var card = document.createElement("details");
+      card.className = "card";
+      card.style.marginBottom = "1rem";
+      card.open = scale.is_default;
+
+      var summary = document.createElement("summary");
+      summary.style.cursor = "pointer";
+      summary.innerHTML = "<strong>" + scale.name + "</strong>" +
+        (scale.is_default ? ' <span style="color:var(--primary);">(default)</span>' : "") +
+        (scale.is_active ? "" : ' <span style="color:var(--stone);">(inactive)</span>');
+      if (scale.description) {
+        summary.innerHTML += " — " + scale.description;
+      }
+      card.appendChild(summary);
+
+      // Boundaries table
+      var boundaries = scale.boundaries || [];
+      var tableWrap = document.createElement("div");
+      tableWrap.className = "student-table-wrap";
+      tableWrap.style.marginTop = "1rem";
+      var table = document.createElement("table");
+      table.className = "student-data-table";
+      var thead = document.createElement("thead");
+      var headRow = document.createElement("tr");
+      ["Grade", "Grade Point", "Min Score", "Max Score", "Description", "Order", "Action"].forEach(function (text) {
+        var th = document.createElement("th");
+        th.textContent = text;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      var tbody = document.createElement("tbody");
+
+      if (!boundaries.length) {
+        var emptyRow = document.createElement("tr");
+        var emptyCell = document.createElement("td");
+        emptyCell.colSpan = 7;
+        emptyCell.style.textAlign = "center";
+        emptyCell.style.color = "var(--stone)";
+        emptyCell.textContent = "No boundaries defined. Add them below.";
+        emptyRow.appendChild(emptyCell);
+        tbody.appendChild(emptyRow);
+      } else {
+        boundaries.forEach(function (b) {
+          var row = document.createElement("tr");
+          [b.grade_letter, b.grade_point, b.min_score, b.max_score,
+           b.description || "—", b.display_order].forEach(function (value) {
+            var cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+          });
+          var actionCell = document.createElement("td");
+          var editBtn = document.createElement("button");
+          editBtn.className = "btn btn-outline";
+          editBtn.type = "button";
+          editBtn.textContent = "Edit";
+          editBtn.dataset.boundaryId = b.id;
+          editBtn.addEventListener("click", function () {
+            fillBoundaryForm(scale.id, b);
+          });
+          var delBtn = document.createElement("button");
+          delBtn.className = "btn btn-outline";
+          delBtn.type = "button";
+          delBtn.textContent = "Delete";
+          delBtn.style.marginLeft = "0.5rem";
+          delBtn.dataset.boundaryId = b.id;
+          delBtn.addEventListener("click", async function () {
+            if (!confirm("Delete this grade boundary?")) return;
+            delBtn.disabled = true;
+            try {
+              await client.rpc("admin_delete_grade_boundary", {
+                target_boundary_id: b.id
+              });
+              showAlert(status, "Boundary deleted.", "success");
+              await loadAdminGradeScales(client);
+            } catch (error) {
+              delBtn.disabled = false;
+              showAlert(status, "Boundary could not be deleted.", "error");
+            }
+          });
+          actionCell.appendChild(editBtn);
+          actionCell.appendChild(delBtn);
+          row.appendChild(actionCell);
+          tbody.appendChild(row);
+        });
+      }
+
+      table.append(thead, tbody);
+      tableWrap.appendChild(table);
+      card.appendChild(tableWrap);
+
+      // Add boundary form
+      var boundaryForm = document.createElement("form");
+      boundaryForm.className = "card";
+      boundaryForm.style.marginTop = "1rem";
+      boundaryForm.style.padding = "1rem";
+      boundaryForm.innerHTML = `
+        <h4>Add or edit grade boundary</h4>
+        <input type="hidden" id="gs-boundary-id" value="">
+        <input type="hidden" id="gs-boundary-scale-id" value="${scale.id}">
+        <div class="field"><label for="gs-grade-letter">Grade letter</label><input id="gs-grade-letter" maxlength="3" placeholder="A1" required></div>
+        <div class="field"><label for="gs-grade-point">Grade point (0-10)</label><input id="gs-grade-point" type="number" min="0" max="10" step="0.01" placeholder="4.00" required></div>
+        <div class="field"><label for="gs-min-score">Min score (0-100)</label><input id="gs-min-score" type="number" min="0" max="100" step="0.01" placeholder="80" required></div>
+        <div class="field"><label for="gs-max-score">Max score (0-100)</label><input id="gs-max-score" type="number" min="0" max="100" step="0.01" placeholder="100" required></div>
+        <div class="field"><label for="gs-description">Description (optional)</label><input id="gs-description" maxlength="255" placeholder="Excellent"></div>
+        <div class="field"><label for="gs-display-order">Display order</label><input id="gs-display-order" type="number" min="0" step="1" value="0" required></div>
+        <button class="btn btn-primary" type="submit">Save boundary</button>
+      `;
+      boundaryForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = boundaryForm.querySelector("button[type='submit']");
+        button.disabled = true;
+        var boundaryId = document.getElementById("gs-boundary-id").value;
+        var scaleId = document.getElementById("gs-boundary-scale-id").value;
+        try {
+          await client.rpc("admin_save_grade_boundary", {
+            target_grade_scale_id: scaleId,
+            target_grade_letter: document.getElementById("gs-grade-letter").value,
+            target_grade_point: Number(document.getElementById("gs-grade-point").value),
+            target_min_score: Number(document.getElementById("gs-min-score").value),
+            target_max_score: Number(document.getElementById("gs-max-score").value),
+            target_description: document.getElementById("gs-description").value || null,
+            target_display_order: Number(document.getElementById("gs-display-order").value)
+          });
+          boundaryForm.reset();
+          document.getElementById("gs-boundary-id").value = "";
+          showAlert(status, "Grade boundary saved.", "success");
+        } catch (error) {
+          showAlert(status, "Grade boundary could not be saved. Check the values and try again.", "error");
+          button.disabled = false;
+          return;
+        }
+        try {
+          await loadAdminGradeScales(client);
+        } catch (error) {
+          showAlert(status, "Grade boundary was saved, but the list could not be refreshed.", "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+      card.appendChild(boundaryForm);
+
+      host.appendChild(card);
+    });
+
+    function fillBoundaryForm(scaleId, boundary) {
+      document.getElementById("gs-boundary-id").value = boundary.id;
+      document.getElementById("gs-boundary-scale-id").value = scaleId;
+      document.getElementById("gs-grade-letter").value = boundary.grade_letter;
+      document.getElementById("gs-grade-point").value = boundary.grade_point;
+      document.getElementById("gs-min-score").value = boundary.min_score;
+      document.getElementById("gs-max-score").value = boundary.max_score;
+      document.getElementById("gs-description").value = boundary.description || "";
+      document.getElementById("gs-display-order").value = boundary.display_order;
+      document.getElementById("gs-grade-letter").focus();
+      window.scrollTo({ top: document.getElementById("gs-grade-letter").offsetTop - 100, behavior: "smooth" });
+    }
   }
 
   function renderAdminAcademicAssessments(client, assessments) {
@@ -1378,35 +1830,85 @@
       });
   }
 
-  function initializeStudentNavigation() {
-    var layout = document.querySelector(".student-portal-layout");
-    var toggle = document.querySelector(".student-sidebar-toggle");
-    var backdrop = document.querySelector(".student-sidebar-backdrop");
-    if (!layout || !toggle || !backdrop) return;
+  function initializeDashboardNavigation() {
+    var layout = document.querySelector("[data-dashboard-layout], .student-portal-layout");
+    if (!layout || layout.dataset.navigationBound) return;
+    var nav = layout.querySelector(".dash-nav, .student-portal-nav");
+    var views = Array.from(document.querySelectorAll("[data-dashboard-view]"));
+    if (!nav || !views.length) return;
+    var links = Array.from(nav.querySelectorAll("a[href^='#']"));
+    var toggle = document.querySelector(".dashboard-menu-toggle, .student-sidebar-toggle");
+    var backdrop = layout.querySelector(".dashboard-sidebar-backdrop, .student-sidebar-backdrop");
+    var navClass = nav.classList.contains("dash-nav") ? "active" : "is-current";
+    var currentViewLabel = document.querySelector("[data-dashboard-current-view], .student-topbar-label");
+    layout.dataset.navigationBound = "true";
 
     function closeMenu() {
       layout.classList.remove("is-sidebar-open");
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Open student portal menu");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open dashboard menu");
+      }
     }
 
-    toggle.addEventListener("click", function () {
-      var isOpen = layout.classList.toggle("is-sidebar-open");
-      toggle.setAttribute("aria-expanded", String(isOpen));
-      toggle.setAttribute("aria-label", isOpen ? "Close student portal menu" : "Open student portal menu");
+    function selectView(viewId, updateHistory) {
+      var view = document.getElementById(viewId);
+      if (!view || view.dataset.viewDisabled === "true") return false;
+      views.forEach(function (candidate) {
+        var selected = candidate === view;
+        candidate.hidden = !selected;
+        candidate.classList.toggle("is-active", selected);
+        candidate.setAttribute("aria-hidden", String(!selected));
+      });
+      links.forEach(function (link) {
+        var selected = link.getAttribute("href") === "#" + viewId;
+        link.classList.toggle(navClass, selected);
+        if (selected) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+        if (selected && currentViewLabel) {
+          currentViewLabel.textContent = link.textContent.trim().replace(/^\d+\s*/, "");
+        }
+      });
+      closeMenu();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (updateHistory && window.location.hash !== "#" + viewId) {
+        window.history.pushState({ dashboardView: viewId }, "", "#" + viewId);
+      }
+      return true;
+    }
+
+    views.forEach(function (view) {
+      var selected = view.classList.contains("is-active");
+      view.hidden = !selected || view.dataset.viewDisabled === "true";
+      view.setAttribute("aria-hidden", String(view.hidden));
     });
-    backdrop.addEventListener("click", closeMenu);
-    layout.querySelectorAll(".student-portal-nav a").forEach(function (link) {
-      link.addEventListener("click", function () {
-        layout.querySelectorAll(".student-portal-nav a").forEach(function (item) {
-          item.classList.remove("is-current");
-          item.removeAttribute("aria-current");
-        });
-        link.classList.add("is-current");
-        link.setAttribute("aria-current", "page");
-        closeMenu();
+    links.forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        var viewId = link.getAttribute("href").slice(1);
+        if (!document.getElementById(viewId)) return;
+        event.preventDefault();
+        selectView(viewId, true);
       });
     });
+    if (toggle && backdrop) {
+      toggle.addEventListener("click", function () {
+        var isOpen = layout.classList.toggle("is-sidebar-open");
+        toggle.setAttribute("aria-expanded", String(isOpen));
+        toggle.setAttribute("aria-label", isOpen ? "Close dashboard menu" : "Open dashboard menu");
+      });
+      backdrop.addEventListener("click", closeMenu);
+    }
+    window.addEventListener("popstate", function () {
+      var viewId = window.location.hash.slice(1);
+      if (!selectView(viewId || "view-overview", false)) {
+        selectView("view-overview", false);
+      }
+    });
+
+    var initialViewId = window.location.hash.slice(1);
+    if (!initialViewId || !selectView(initialViewId, false)) {
+      selectView("view-overview", false);
+    }
   }
 
   function renderAnnouncements(announcements) {
@@ -1539,6 +2041,7 @@
 
       setProfileName(profile, session.user.email);
       document.querySelector("[data-dashboard-content]").hidden = false;
+      initializeDashboardNavigation();
       if (requiredRole === "student") {
         await loadStudentDashboard(client, session.user.id);
         watchStudentFeeChanges(client, session.user.id);
@@ -1563,6 +2066,5 @@
   if (loginForm) initializeLogin(client, loginForm);
 
   var page = document.body.getAttribute("data-page");
-  if (page === "student-dashboard") initializeStudentNavigation();
   if (page === "student-dashboard" || page === "staff-dashboard" || page === "admin-dashboard") initializeDashboard(client, page);
 })();

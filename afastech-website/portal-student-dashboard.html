@@ -22,15 +22,14 @@
     </a>
     <p class="student-sidebar-label">STUDENT SERVICES</p>
     <nav class="student-portal-nav" aria-label="Student portal">
-      <a class="is-current" href="#overview" aria-current="page"><span>01</span> Overview</a>
-      <a href="#personal-details"><span>02</span> Personal details</a>
-      <a href="#academics"><span>03</span> My academics</a>
-      <a href="#subjects"><span>04</span> Subjects</a>
-      <a href="#timetable"><span>05</span> Timetable</a>
-      <a href="#results"><span>06</span> Results</a>
-      <a href="#fees"><span>07</span> Fees</a>
-      <a href="#notices"><span>08</span> Announcements</a>
-      <a href="#account-security"><span>09</span> Account security</a>
+      <a class="is-current" href="#view-overview" aria-current="page"><span>01</span> Overview</a>
+      <a href="#view-personal-details"><span>02</span> Personal details</a>
+      <a href="#view-academics"><span>03</span> My academics</a>
+      <a href="#view-timetable"><span>04</span> Timetable</a>
+      <a href="#view-results"><span>05</span> Results</a>
+      <a href="#view-fees"><span>06</span> Fees</a>
+      <a href="#view-notices"><span>07</span> Announcements</a>
+      <a href="#view-account-security"><span>08</span> Account security</a>
     </nav>
     <div class="student-sidebar-footer">
       <a href="index.html">Visit school website</a>
@@ -44,7 +43,7 @@
       <button class="student-sidebar-toggle" type="button" aria-controls="student-portal-sidebar" aria-expanded="false" aria-label="Open student portal menu">
         <span></span><span></span><span></span>
       </button>
-      <div class="student-topbar-label">STUDENT INFORMATION SYSTEM</div>
+      <div class="student-topbar-label">Overview</div>
       <div class="student-topbar-user">
         <span class="student-user-avatar" aria-hidden="true">A</span>
         <span><small>Signed in as</small><strong data-portal-user>Student</strong></span>
@@ -54,7 +53,8 @@
     <main id="main" class="student-portal-content">
       <div id="portal-data-alert" class="alert" role="status"></div>
       <div data-dashboard-content hidden>
-        <section id="overview" class="student-welcome">
+        <section id="view-overview" class="dashboard-view student-view is-active" data-dashboard-view>
+        <section class="student-welcome">
           <div>
             <p class="student-eyebrow">AFADJATO SENIOR HIGH TECHNICAL SCHOOL</p>
             <h1>Welcome, <span data-student-first-name>Student</span></h1>
@@ -62,8 +62,10 @@
           </div>
           <div class="student-welcome-mark" aria-hidden="true">A</div>
         </section>
+        </section>
 
-        <section id="personal-details" class="student-panel student-personal-panel">
+        <section id="view-personal-details" class="dashboard-view student-view" data-dashboard-view hidden>
+        <section class="student-panel student-personal-panel">
           <div class="student-panel-heading">
             <div><p class="student-eyebrow">YOUR SCHOOL RECORD</p><h2>Personal details</h2></div>
             <span class="student-panel-note">Managed by the school</span>
@@ -78,8 +80,10 @@
           </dl>
           <p class="student-personal-note">If any of these details are incorrect, contact the school office to update your official record.</p>
         </section>
+        </section>
 
-        <section id="account-security" class="student-panel student-personal-panel">
+        <section id="view-account-security" class="dashboard-view student-view" data-dashboard-view hidden>
+        <section class="student-panel student-personal-panel">
           <div class="student-panel-heading">
             <div><p class="student-eyebrow">ACCOUNT SECURITY</p><h2>Change your password</h2></div>
           </div>
@@ -97,7 +101,9 @@
           </form>
           <p id="student-password-status" class="alert" role="status" style="margin-top:1rem;"></p>
         </section>
+        </section>
 
+        <section id="view-academics" class="dashboard-view student-view" data-dashboard-view hidden>
         <section id="academics" class="student-summary-grid" aria-label="Academic overview">
           <article class="student-summary-card student-summary-primary">
             <span class="student-summary-label">PROGRAMME</span>
@@ -133,9 +139,9 @@
             </table>
           </div>
         </section>
+        </section>
 
-        <div class="student-dashboard-columns">
-          <div class="student-dashboard-primary">
+        <section id="view-timetable" class="dashboard-view student-view" data-dashboard-view hidden>
             <section id="timetable" class="student-panel">
               <div class="student-panel-heading">
                 <div><p class="student-eyebrow">YOUR WEEK</p><h2>Class timetable</h2></div>
@@ -149,7 +155,9 @@
                 </table>
               </div>
             </section>
+        </section>
 
+        <section id="view-results" class="dashboard-view student-view" data-dashboard-view hidden>
             <section id="results" class="student-panel">
               <div class="student-panel-heading">
                 <div><p class="student-eyebrow">ACADEMIC RECORD</p><h2>Recent results</h2></div>
@@ -163,24 +171,38 @@
                 </table>
               </div>
             </section>
-          </div>
+            <section class="student-panel" aria-labelledby="student-transcripts-heading" style="margin-top:1.5rem;">
+              <div class="student-panel-heading">
+                <div><p class="student-eyebrow">OFFICIAL RECORDS</p><h2 id="student-transcripts-heading">Transcript history</h2></div>
+                <span class="student-panel-note">Published transcripts</span>
+              </div>
+              <p id="student-transcripts-status" class="student-empty-note" role="status"></p>
+              <div class="student-table-wrap">
+                <table class="student-data-table">
+                  <thead><tr><th>School year</th><th>Semester</th><th>Subject</th><th>GPA</th><th>Final grade</th></tr></thead>
+                  <tbody id="student-transcripts"></tbody>
+                </table>
+              </div>
+            </section>
+        </section>
 
-          <aside class="student-dashboard-secondary">
+        <section id="view-fees" class="dashboard-view student-view" data-dashboard-view hidden>
             <section id="fees" class="student-fees-panel">
               <p class="student-eyebrow">ACCOUNT</p>
               <h2>Fees status</h2>
               <p class="student-fees-value" data-student-fees>Loading…</p>
               <p class="student-fees-help">Your latest fee status recorded by the school.</p>
             </section>
+        </section>
 
+        <section id="view-notices" class="dashboard-view student-view" data-dashboard-view hidden>
             <section id="notices" class="student-panel student-notices-panel">
               <div class="student-panel-heading">
                 <div><p class="student-eyebrow">FROM YOUR SCHOOL</p><h2>Announcements</h2></div>
               </div>
               <div id="portal-announcements"></div>
             </section>
-          </aside>
-        </div>
+        </section>
 
         <p id="student-data-status" class="student-empty-note" role="status"></p>
       </div>

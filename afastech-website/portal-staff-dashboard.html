@@ -12,45 +12,46 @@
 <body data-page="staff-dashboard">
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<div class="announce-bar">
-  <div class="announce-track">
-    <span class="announce-copy">Admissions are open — <a href="admissions.html">start your application</a></span>
-    <span class="announce-copy" aria-hidden="true">Admissions are open — <a href="admissions.html" tabindex="-1">start your application</a></span>
-  </div>
-</div>
 <header class="portal-dash-header">
   <div class="container">
     <a class="brand" href="index.html" style="color:var(--white);">
       <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
       <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Staff Portal</span></span>
     </a>
-    <div style="display:flex; align-items:center; gap:1rem;">
-      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Staff</strong></span>
+    <div class="dashboard-header-actions">
+      <button class="dashboard-menu-toggle" type="button" aria-controls="staff-navigation" aria-expanded="false" aria-label="Open staff menu"><span></span><span></span><span></span></button>
+      <span class="dashboard-current-view" data-dashboard-current-view>Overview</span>
+      <span class="dashboard-signed-in">Signed in as <strong data-portal-user>Staff</strong></span>
       <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="staff">Sign Out</a>
     </div>
   </div>
 </header>
 
 <main id="main" class="portal-shell">
-  <div class="container dash-grid">
-    <nav aria-label="Dashboard">
+  <div class="container dash-grid" data-dashboard-layout>
+    <nav id="staff-navigation" aria-label="Dashboard">
       <ul class="dash-nav">
-        <li><a class="active" href="portal-staff-dashboard.html">Overview</a></li>
-        <li><a href="#classes">My Classes</a></li>
-        <li><a href="#gradebook">Academic marks</a></li>
-        <li><a href="#notices">Staff Notices</a></li>
-        <li><a href="#account-security">Account security</a></li>
-        <li><a href="#calendar">Calendar</a></li>
+        <li><a class="active" href="#view-overview" aria-current="page">Overview</a></li>
+        <li><a href="#view-classes">My classes</a></li>
+        <li><a href="#view-gradebook">Academic marks</a></li>
+        <li><a href="#view-house-fees" id="staff-house-nav" hidden>House fee records</a></li>
+        <li><a href="#view-notices">Staff notices</a></li>
+        <li><a href="#view-account-security">Account security</a></li>
       </ul>
     </nav>
+    <button class="dashboard-sidebar-backdrop" type="button" aria-label="Close staff menu" tabindex="-1"></button>
 
     <div>
       <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
       <div data-dashboard-content hidden>
 
+      <section id="view-overview" class="dashboard-view is-active" data-dashboard-view>
       <h1>Welcome back</h1>
       <p style="color:var(--stone); margin-bottom:2rem;">Your assigned classes, academic assessments, and school updates.</p>
+      <div class="dashboard-overview-note">Use the menu to open your class list, enter academic marks, review notices, or update your account password.</div>
+      </section>
 
+      <section id="view-classes" class="dashboard-view" data-dashboard-view hidden>
       <h3 id="classes">My assigned classes and subjects</h3>
       <div style="overflow-x:auto;margin-bottom:2.5rem;">
         <table class="data-table">
@@ -59,15 +60,19 @@
         </table>
       </div>
       <p id="staff-assignments-status" role="status" style="color:var(--stone);"></p>
+      </section>
 
+      <section id="view-gradebook" class="dashboard-view" data-dashboard-view hidden>
       <section id="gradebook" class="card" style="margin-bottom:2.5rem;">
         <h2>Academic marks</h2>
         <p>Choose one of your assigned classes and subjects, create an assessment, enter a mark for every enrolled student, then submit it for administrator review.</p>
         <form id="staff-academic-assessment-form">
           <div class="field"><label for="staff-academic-assignment">Assigned class and subject</label><select id="staff-academic-assignment" required></select></div>
           <div class="field"><label for="staff-academic-term">Semester</label><select id="staff-academic-term" required></select></div>
+          <div class="field"><label for="staff-academic-assessment-type">Assessment type</label><select id="staff-academic-assessment-type" required></select></div>
           <div class="field"><label for="staff-academic-assessment-title">Assessment name</label><input id="staff-academic-assessment-title" maxlength="120" required></div>
           <div class="field"><label for="staff-academic-assessment-max">Maximum mark (up to 100)</label><input id="staff-academic-assessment-max" type="number" min="0.01" max="100" step="0.01" value="100" required></div>
+          <div class="field"><label for="staff-academic-assessment-weighting">Weighting (%)</label><input id="staff-academic-assessment-weighting" type="number" min="0.01" max="100" step="0.01" value="100" required></div>
           <button class="btn btn-primary" type="submit">Create assessment</button>
         </form>
         <p id="staff-academic-status" class="alert" role="status" style="margin-top:1rem;"></p>
@@ -79,8 +84,10 @@
         <p id="staff-academic-roster-status" role="status" style="color:var(--stone);"></p>
         <button id="staff-academic-submit" class="btn btn-primary" type="button" disabled>Submit marks for review</button>
       </section>
+      </section>
 
-      <section id="house-fees" hidden>
+      <section id="view-house-fees" class="dashboard-view" data-dashboard-view data-view-disabled="true" hidden>
+      <section id="house-fees" class="card" hidden>
         <h3>House student fee records</h3>
         <p style="color:var(--stone);">Fee changes are saved to the student's school record and appear on their dashboard immediately.</p>
         <div style="overflow-x:auto;">
@@ -91,11 +98,15 @@
         </div>
         <p id="staff-house-fees-status" role="status" style="color:var(--stone);"></p>
       </section>
+      </section>
 
+      <section id="view-notices" class="dashboard-view" data-dashboard-view hidden>
       <h3 id="notices">Staff notices</h3>
       <div id="portal-announcements"></div>
+      </section>
 
-      <section id="account-security" class="card" style="margin-top:2rem;">
+      <section id="view-account-security" class="dashboard-view" data-dashboard-view hidden>
+      <section id="account-security" class="card">
         <h3>Change your password</h3>
         <p>Your account was set up with a temporary password. Change it now to a private password only you know.</p>
         <form id="staff-password-form">
@@ -110,6 +121,7 @@
           <button class="btn btn-primary" type="submit">Change Password</button>
         </form>
         <p id="staff-password-status" class="alert" role="status" style="margin-top:1rem;"></p>
+      </section>
       </section>
       </div>
     </div>

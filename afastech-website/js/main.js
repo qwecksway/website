@@ -94,6 +94,7 @@
     function sizeStage() {
       if (!stage) return;
       var tallestSlide = 0;
+      stage.style.minHeight = "0px";
       slides.forEach(function (slide) {
         var position = slide.style.position;
         var visibility = slide.style.visibility;

@@ -7,50 +7,74 @@
 <title>Super Admin Dashboard — AFASTECH</title>
 <link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="admin-dashboard">
 <a class="skip-link" href="#main">Skip to main content</a>
-<div class="announce-bar">
-  <div class="announce-track">
-    <span class="announce-copy">AFASTECH — Administration Portal</span>
-    <span class="announce-copy" aria-hidden="true">AFASTECH — Administration Portal</span>
-  </div>
-</div>
 <header class="portal-dash-header">
   <div class="container">
-    <a class="brand" href="index.html" style="color:var(--white);">
-      <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
-      <span class="brand-text"><span class="brand-name" style="color:var(--white);">AFASTECH</span><span class="brand-sub" style="color:var(--forest-100);">Super Admin Portal</span></span>
-    </a>
-    <div style="display:flex; align-items:center; gap:1rem;">
-      <span style="color:var(--forest-100); font-size:0.9rem;">Signed in as <strong data-portal-user style="color:var(--white);">Super Admin</strong></span>
-      <a class="btn btn-outline-light" href="#" data-portal-signout data-portal-type="admin">Sign Out</a>
+    <div class="dashboard-header-actions">
+      <button class="dashboard-menu-toggle" type="button" aria-controls="admin-navigation" aria-expanded="false" aria-label="Open administration menu"><span></span><span></span><span></span></button>
+      <span class="dashboard-current-view" data-dashboard-current-view>Overview</span>
+    </div>
+    <div class="dashboard-user-chip">
+      <span class="dashboard-user-avatar" aria-hidden="true" data-portal-avatar>S</span>
+      <span class="dashboard-user-meta"><strong data-portal-user>Super Admin</strong><small>Super Administrator</small></span>
     </div>
   </div>
 </header>
 <main id="main" class="portal-shell">
-  <div class="container dash-grid">
-    <nav aria-label="Administration">
+  <div class="container dash-grid" data-dashboard-layout>
+    <nav id="admin-navigation" aria-label="Administration">
+      <a class="admin-brand" href="index.html">
+        <span class="admin-brand-mark" aria-hidden="true">A</span>
+        <span class="admin-brand-text"><strong>AFASTECH</strong><small>School Management</small></span>
+      </a>
+      <p class="admin-nav-label">Management</p>
       <ul class="dash-nav">
-        <li><a class="active" href="portal-admin-dashboard.html">Overview</a></li>
-        <li><a href="#accounts">Portal accounts</a></li>
-        <li><a href="#academics">Academic setup</a></li>
-        <li><a href="#houses">House assignments</a></li>
-        <li><a href="#fees">Student fee records</a></li>
-        <li><a href="#provisioning">Provisioning guide</a></li>
+        <li><a class="active" href="#view-overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span>Overview</span></a></li>
+        <li><a href="#view-students"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12.2V17c0 1.2 2.7 3 6 3s6-1.8 6-3v-4.8"/></svg><span>Student accounts</span></a></li>
+        <li><a href="#view-access"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c2.2.7 3.5 2.6 3.5 5.6"/></svg><span>Staff &amp; access</span></a></li>
+        <li><a href="#view-academics"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-1.8-1.3-4.4-2-8-2v14c3.6 0 6.2.7 8 2 1.8-1.3 4.4-2 8-2V4c-3.6 0-6.2.7-8 2z"/><path d="M12 6v14"/></svg><span>Academic setup</span></a></li>
+        <li><a href="#view-assessment-types"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span>Assessment types</span></a></li>
+        <li><a href="#view-grade-scales"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Grade scales</span></a></li>
+        <li><a href="#view-transcripts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span>Transcript imports</span></a></li>
+        <li><a href="#view-batch-results"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span>Batch results import</span></a></li>
+        <li><a href="#view-houses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>House assignments</span></a></li>
+        <li><a href="#view-fees"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.5-.8-1.5-1.2-2.8-1.2-1.6 0-2.8.8-2.8 2s1.1 1.7 2.8 2 2.8.8 2.8 2-1.2 2-2.8 2c-1.3 0-2.3-.4-2.8-1.2M12 6v2M12 16v2"/></svg><span>Fee records</span></a></li>
+        <li><a href="#view-provisioning"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Setup guide</span></a></li>
       </ul>
+      <div class="admin-sidebar-footer">
+        <p class="admin-secure-session"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/></svg>Secure session</p>
+        <a class="admin-sign-out" href="#" data-portal-signout data-portal-type="admin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a>
+      </div>
     </nav>
+    <button class="dashboard-sidebar-backdrop" type="button" aria-label="Close administration menu" tabindex="-1"></button>
     <div>
       <div id="portal-data-alert" class="alert" role="status" style="margin-bottom:1.6rem;"></div>
       <div data-dashboard-content hidden>
-        <h1>Super Admin</h1>
-        <p style="color:var(--stone); margin-bottom:2rem;">Manage portal access, school houses, house assignments, and student fee records.</p>
-        <div class="grid grid-3" style="margin-bottom:2.5rem;">
-          <div class="card"><h4>Portal accounts</h4><p data-admin-total>0</p></div>
-          <div class="card"><h4>Staff accounts</h4><p data-admin-staff-count>0</p></div>
+        <section id="view-overview" class="dashboard-view is-active" data-dashboard-view>
+        <p class="admin-eyebrow">AFASTECH Administration</p>
+        <h1>Administration Dashboard</h1>
+        <p class="admin-lede">Central control of school data, services and role-authorized workflows.</p>
+        <div class="admin-stat-grid">
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span>
+            <div><span class="admin-stat-label">Portal accounts</span><strong data-admin-total>0</strong><small>All sign-in accounts</small></div>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12.2V17c0 1.2 2.7 3 6 3s6-1.8 6-3v-4.8"/></svg></span>
+            <div><span class="admin-stat-label">Student accounts</span><strong data-admin-student-count>0</strong><small>Central student records</small></div>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c2.2.7 3.5 2.6 3.5 5.6"/></svg></span>
+            <div><span class="admin-stat-label">Teachers &amp; staff</span><strong data-admin-staff-count>0</strong><small>Active staff records</small></div>
+          </div>
         </div>
+        <p class="dashboard-overview-note">Choose a section from the menu to manage students, staff access, academics, houses, or fee records.</p>
+        </section>
+        <section id="view-students" class="dashboard-view" data-dashboard-view hidden>
         <section id="student-import" class="card" style="margin-bottom:2.5rem;">
           <h2>Register students</h2>
           <p>Load a batch roster or create one student account. Each student receives a unique generated password and signs in with their CassRefID. Passwords are not emailed or stored in the portal; download the credential file once and hand it out privately.</p>
@@ -117,6 +141,18 @@
           <p id="admin-student-import-status" class="alert" role="status" style="margin-top:1rem;"></p>
           <button id="admin-student-import-download" class="btn btn-outline" type="button" hidden>Download one-time student credentials</button>
         </section>
+        <section class="card" aria-labelledby="admin-student-records-heading">
+          <h2 id="admin-student-records-heading">Edit student records</h2>
+          <p>Update each student’s name, CassRefID, programme, residency, or class. Save a row to commit changes directly to the database.</p>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Student</th><th>CassRefID</th><th>Programme</th><th>Residency</th><th>Class</th><th>Save</th></tr></thead>
+              <tbody id="admin-student-details"></tbody>
+            </table>
+          </div>
+        </section>
+        </section>
+        <section id="view-access" class="dashboard-view" data-dashboard-view hidden>
         <section id="add-staff" class="card" style="margin-bottom:2.5rem;">
           <h2>Add a staff member or teacher</h2>
           <p>Create the account directly in Supabase. The temporary password is not emailed. Share it with the staff member through a private channel and ask them to change it after their first sign-in.</p>
@@ -173,6 +209,7 @@
             <tbody id="admin-profiles"></tbody>
           </table>
         </div>
+        <section class="card">
         <h3>Staff job titles and departments</h3>
         <p style="color:var(--stone);">Only staff explicitly assigned the House Master or House Mistress job title can be assigned to a house.</p>
         <div style="overflow-x:auto;margin-bottom:2rem;">
@@ -181,6 +218,84 @@
             <tbody id="admin-staff-details"></tbody>
           </table>
         </div>
+        </section>
+        </section>
+                <section id="view-assessment-types" class="dashboard-view" data-dashboard-view hidden>
+                <section id="assessment-types" style="margin-bottom:2.5rem;">
+                  <h2>Assessment types</h2>
+                  <p style="color:var(--stone);">Define the types of assessments used in your school (e.g., Continuous Assessment, End-of-Term Exam, Project, Practical). Each type has a default weighting used when teachers create assessments.</p>
+                  <form id="admin-assessment-type-form" class="card" style="margin-bottom:2rem;">
+                    <h3>Add or update assessment type</h3>
+                    <div class="field"><label for="admin-at-name">Name</label><input id="admin-at-name" maxlength="60" placeholder="Continuous Assessment" required></div>
+                    <div class="field"><label for="admin-at-code">Short code</label><input id="admin-at-code" maxlength="10" placeholder="CA" required></div>
+                    <div class="field"><label for="admin-at-description">Description (optional)</label><input id="admin-at-description" maxlength="255" placeholder="Class exercises, homework, quizzes during the term"></div>
+                    <div class="field"><label for="admin-at-weighting">Default weighting (%)</label><input id="admin-at-weighting" type="number" min="0.01" max="100" step="0.01" value="100" required></div>
+                    <div class="field"><label for="admin-at-order">Display order</label><input id="admin-at-order" type="number" min="0" step="1" value="0" required></div>
+                    <div class="field"><label for="admin-at-active"><input type="checkbox" id="admin-at-active" checked> Active</label></div>
+                    <button class="btn btn-primary" type="submit">Save assessment type</button>
+                  </form>
+                  <p id="admin-at-status" class="alert" role="status" style="margin-top:1rem;"></p>
+                  <h3>Existing assessment types</h3>
+                  <div style="overflow-x:auto;">
+                    <table class="data-table">
+                      <thead><tr><th>Name</th><th>Code</th><th>Description</th><th>Weighting</th><th>Order</th><th>Active</th><th>Action</th></tr></thead>
+                      <tbody id="admin-assessment-type-list"></tbody>
+                    </table>
+                  </div>
+                </section>
+                </section>
+                <section id="view-grade-scales" class="dashboard-view" data-dashboard-view hidden>
+                        <section id="grade-scales" style="margin-bottom:2.5rem;">
+                          <h2>Grade scales</h2>
+                          <p style="color:var(--stone);">Define grading scales (e.g., WASSCE A1–F9) with grade points for GPA calculation. One scale is marked as default for new academic years.</p>
+                          <form id="admin-grade-scale-form" class="card" style="margin-bottom:2rem;">
+                            <h3>Add or update grade scale</h3>
+                            <div class="field"><label for="admin-gs-name">Scale name</label><input id="admin-gs-name" maxlength="80" placeholder="WASSCE Standard" required></div>
+                            <div class="field"><label for="admin-gs-description">Description (optional)</label><input id="admin-gs-description" maxlength="255" placeholder="Standard West African Senior School Certificate Examination grading"></div>
+                            <div class="field"><label for="admin-gs-default"><input type="checkbox" id="admin-gs-default"> Set as default for new academic years</label></div>
+                            <div class="field"><label for="admin-gs-active"><input type="checkbox" id="admin-gs-active" checked> Active</label></div>
+                            <button class="btn btn-primary" type="submit">Save grade scale</button>
+                          </form>
+                          <p id="admin-gs-status" class="alert" role="status" style="margin-top:1rem;"></p>
+                          <h3>Grade scales and boundaries</h3>
+                          <div id="admin-grade-scale-list"></div>
+                        </section>
+                        </section>
+                <section id="view-transcripts" class="dashboard-view" data-dashboard-view hidden>
+          <section class="card" aria-labelledby="admin-transcripts-heading">
+            <h1 id="admin-transcripts-heading">Individual transcript imports</h1>
+            <p>Choose a PDF transcript. It is read in this browser only; the source file is never uploaded or saved. Extracted subject rows must be matched to an existing student, checked, and corrected before a private draft is saved. Letter grades and GPA are preserved as printed and are not converted to marks.</p>
+            <form id="admin-transcript-file-form">
+              <div class="field">
+                <label for="admin-transcript-file">Transcript PDF</label>
+                <input id="admin-transcript-file" type="file" accept="application/pdf,.pdf" required>
+              </div>
+              <button class="btn btn-primary" type="submit">Read PDF locally</button>
+            </form>
+            <p id="admin-transcript-status" class="alert" role="status" style="margin-top:1rem;"></p>
+            <div id="admin-transcript-review" hidden>
+              <div class="transcript-review-toolbar">
+                <h2>Review extracted records</h2>
+                <button id="admin-transcript-close-review" class="btn btn-outline" type="button">Close local preview</button>
+              </div>
+              <p>Assign each transcript to the correct student account. Check every page against the local PDF preview, especially any rows flagged as needing manual entry.</p>
+              <iframe id="admin-transcript-pdf-preview" title="Local transcript PDF preview" hidden></iframe>
+              <div id="admin-transcript-records"></div>
+              <button id="admin-transcript-save-drafts" class="btn btn-primary" type="button">Save reviewed drafts</button>
+            </div>
+          </section>
+          <section class="card" aria-labelledby="admin-transcript-queue-heading" style="margin-top:1.5rem;">
+            <h2 id="admin-transcript-queue-heading">Saved transcripts</h2>
+            <p>Drafts remain private. Publishing makes that transcript available only to the selected student's portal.</p>
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead><tr><th>Student</th><th>CassRefID</th><th>Rows</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="admin-transcript-list"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+        <section id="view-academics" class="dashboard-view" data-dashboard-view hidden>
         <section id="academics" style="margin-bottom:2.5rem;">
           <h2>Academic setup</h2>
           <p style="color:var(--stone);">Set up school years, the two semesters, programmes, classes, subjects, student enrolments, and teacher allocations. Existing student profiles and records remain the source of identity.</p>
@@ -249,6 +364,48 @@
           <p style="color:var(--stone);">Teachers submit marks for administrator review. Students can see results only after publication.</p>
           <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Year / semester</th><th>Class</th><th>Subject</th><th>Assessment</th><th>Status / action</th></tr></thead><tbody id="admin-academic-assessments"></tbody></table></div>
         </section>
+        </section>
+        <section id="view-batch-results" class="dashboard-view" data-dashboard-view hidden>
+        <section id="batch-results" style="margin-bottom:2.5rem;">
+          <h2>Batch results import</h2>
+          <p>Import assessment results from a PDF class result sheet. The file is read locally in the browser and not uploaded or stored.</p>
+          <form id="admin-batch-results-form" class="card">
+            <div class="field">
+              <label for="admin-batch-assessment">Assessment</label>
+              <select id="admin-batch-assessment" required></select>
+            </div>
+            <div class="field">
+              <label for="admin-batch-class-subject">Class & Subject</label>
+              <select id="admin-batch-class-subject" required></select>
+            </div>
+            <div class="field">
+              <label for="admin-batch-file">Class result PDF</label>
+              <input id="admin-batch-file" type="file" accept="application/pdf,.pdf" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Read PDF and extract results</button>
+          </form>
+          <p id="admin-batch-status" class="alert" role="status" style="margin-top:1rem;"></p>
+          
+          <section class="card" id="admin-batch-preview" hidden style="margin-top:1.5rem;">
+            <div class="field">
+              <label>PDF Preview:</label>
+              <iframe id="admin-batch-pdf-preview" title="Local class results PDF preview" style="width:100%; height:300px;"></iframe>
+            </div>
+            <h3>Extracted results (preview)</h3>
+            <p>Review the extracted student scores. Incomplete or unmatched entries will appear below.</p>
+            <div style="overflow-x:auto;margin-bottom:1rem;">
+              <table class="data-table">
+                <thead><tr><th>Student ID</th><th>Index #</th><th>Score</th><th>Action</th></tr></thead>
+                <tbody id="admin-batch-results-list"></tbody>
+              </table>
+            </div>
+            <p id="admin-batch-unmatched-status" class="alert" role="status" style="color:var(--stone);"></p>
+            <button id="admin-batch-clear" class="btn btn-outline" type="button">Clear and start over</button>
+            <button id="admin-batch-apply" class="btn btn-primary" type="button" disabled>Save results to database</button>
+          </section>
+        </section>
+        </section>
+        <section id="view-houses" class="dashboard-view" data-dashboard-view hidden>
         <section id="houses" style="margin-bottom:2.5rem;">
           <h2>Houses and assignments</h2>
           <form id="admin-house-form" class="card" style="margin-bottom:1rem;">
@@ -271,6 +428,8 @@
           </form>
           <p id="admin-house-status" role="status" style="color:var(--stone);"></p>
         </section>
+        </section>
+        <section id="view-fees" class="dashboard-view" data-dashboard-view hidden>
         <section id="fees" style="margin-bottom:2.5rem;">
           <h2>Student fee records</h2>
           <p style="color:var(--stone);">These are the same records shown on each student's dashboard.</p>
@@ -281,10 +440,13 @@
             </table>
           </div>
         </section>
+        </section>
+        <section id="view-provisioning" class="dashboard-view" data-dashboard-view hidden>
         <section class="card" id="provisioning">
           <h3>Student account setup</h3>
           <p>Student accounts are invited through Supabase Authentication, then assigned the Student role in Portal accounts above. Use Add a staff member or teacher to create Staff Portal accounts directly from this page.</p>
           <p><strong>Super Admin access cannot be granted from this page.</strong> The first Super Admin must be provisioned by an existing trusted database operator.</p>
+        </section>
         </section>
       </div>
     </div>
@@ -292,7 +454,12 @@
 </main>
 <script src="js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script type="module">
+  import * as pdfjsLib from "./assets/vendor/pdfjs-4.10.38/pdf.min.mjs";
+  window.pdfjsLib = pdfjsLib;
+</script>
 <script src="js/supabase-config.js"></script>
 <script src="js/portal.js"></script>
+<script src="js/transcript-import.js"></script>
 </body>
 </html>
