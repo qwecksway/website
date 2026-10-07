@@ -5125,3 +5125,11 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sr-card .data-table tbody tr:hover{background:#f8faff}
 .sr-photo,.sp-photo{border-radius:14px;box-shadow:0 4px 14px rgba(16,26,42,.1)}
 @media (max-width:700px){.sr-card{padding:1.25rem}.sr-tile{min-height:0}}
+
+.sr-bulkbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.75rem 1rem;margin-bottom:1rem;background:#f3f6fb;border:1px solid #e3e9f3;border-radius:12px}
+.sr-bulkbar select{min-width:140px}
+.sr-bulk-spacer{flex:1}
+.sr-selected-count{font-weight:700;color:#235fd0;min-width:90px}
+.sr-move-label{font-size:.85rem;font-weight:600;color:#334155}
+.sr-check-col{width:42px;text-align:center}
+.sr-check-col input{width:18px;height:18px;cursor:pointer}

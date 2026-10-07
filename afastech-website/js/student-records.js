@@ -102,7 +102,7 @@
 
   /* ----------------------------- Admin side ----------------------------- */
 
-  var admin = { client: null, records: [], selected: null, lastSearch: null, searchRows: null, year: "", area: "", bound: false };
+  var admin = { client: null, records: [], selected: null, lastSearch: null, searchRows: null, selected_ids: {}, year: "", area: "", bound: false };
 
   function matchesFilters(record) {
     return (!admin.year || record.form_class === admin.year) && (!admin.area || record.programme === admin.area);
@@ -117,7 +117,54 @@
       button.textContent = (year ? yearLabel(year) : "All years") + " (" + count + ")";
       button.classList.toggle("is-active", year === admin.year);
     });
+    admin.shownIds = rows.slice(0, MAX_ROWS).map(function (record) { return record.id; });
     renderResults(rows.slice(0, MAX_ROWS), rows.length);
+    updateSelectionUi();
+  }
+
+  function updateSelectionUi() {
+    var count = Object.keys(admin.selected_ids).length;
+    var counter = byId("sr-selected-count");
+    if (counter) counter.textContent = count + " selected";
+    var shown = admin.shownIds || [];
+    var allShown = shown.length > 0 && shown.every(function (id) { return admin.selected_ids[id]; });
+    var master = byId("sr-check-all");
+    if (master) master.checked = allShown;
+  }
+
+  function setShownSelected(selected) {
+    (admin.shownIds || []).forEach(function (id) {
+      if (selected) admin.selected_ids[id] = true;
+      else delete admin.selected_ids[id];
+    });
+    document.querySelectorAll("#sr-results .sr-row-check").forEach(function (box) { box.checked = selected; });
+    updateSelectionUi();
+  }
+
+  async function moveSelected() {
+    var status = byId("sr-move-status");
+    var ids = Object.keys(admin.selected_ids);
+    var year = byId("sr-move-year").value;
+    if (!ids.length) { showAlert(status, "Select at least one student first.", "error"); return; }
+    if (!year) { showAlert(status, "Choose the year to move them to.", "error"); return; }
+    if (!window.confirm("Move " + ids.length + " student" + (ids.length === 1 ? "" : "s") + " to " + yearLabel(year) + "?")) return;
+    var button = byId("sr-move-apply");
+    button.disabled = true;
+    showAlert(status, "Moving students…", "success");
+    try {
+      var result = await admin.client.rpc("admin_set_students_year", { target_student_ids: ids, target_year: year });
+      if (result.error) throw result.error;
+      var moved = result.data;
+      admin.selected_ids = {};
+      await refreshAfterChange();
+      var skipped = ids.length - moved;
+      showAlert(status, moved + " student" + (moved === 1 ? "" : "s") + " moved to " + yearLabel(year) + "." +
+        (skipped > 0 ? " " + skipped + " could not be moved because they have no saved record yet." : ""), "success");
+    } catch (error) {
+      showAlert(status, "The students could not be moved: " + (error.message || "unknown error"), "error");
+    } finally {
+      button.disabled = false;
+    }
   }
 
   function renderResults(rows, total) {
@@ -127,7 +174,7 @@
     if (!rows.length) {
       var emptyRow = document.createElement("tr");
       var emptyCell = document.createElement("td");
-      emptyCell.colSpan = 6;
+      emptyCell.colSpan = 7;
       emptyCell.textContent = "No students match your search.";
       emptyRow.appendChild(emptyCell);
       tbody.appendChild(emptyRow);
@@ -135,6 +182,19 @@
     }
     rows.forEach(function (record) {
       var row = document.createElement("tr");
+      var checkCell = document.createElement("td");
+      checkCell.className = "sr-check-col";
+      var check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "sr-row-check";
+      check.setAttribute("aria-label", "Select " + displayName(record));
+      check.checked = !!admin.selected_ids[record.id];
+      check.addEventListener("change", function () {
+        if (check.checked) admin.selected_ids[record.id] = true;
+        else delete admin.selected_ids[record.id];
+        updateSelectionUi();
+      });
+      checkCell.appendChild(check);
       var nameCell = document.createElement("td");
       var name = document.createElement("strong");
       name.textContent = displayName(record);
@@ -157,13 +217,14 @@
       edit.textContent = "View / edit";
       edit.addEventListener("click", function () { openEditor(record); });
       actionCell.appendChild(edit);
-      row.append(nameCell, indexCell, classCell, areaCell, dobCell, actionCell);
+      row.append(checkCell, nameCell, indexCell, classCell, areaCell, dobCell, actionCell);
+      row.dataset.id = record.id;
       tbody.appendChild(row);
     });
     if (typeof total === "number" && total > rows.length) {
       var more = document.createElement("tr");
       var moreCell = document.createElement("td");
-      moreCell.colSpan = 6;
+      moreCell.colSpan = 7;
       moreCell.textContent = "Showing the first " + rows.length + " of " + total + " students. Use the filters or search to narrow the list.";
       more.appendChild(moreCell);
       tbody.appendChild(more);
@@ -426,6 +487,13 @@
   }
 
   function bindFilters() {
+    byId("sr-check-all").addEventListener("change", function (event) { setShownSelected(event.target.checked); });
+    byId("sr-select-visible").addEventListener("click", function () { setShownSelected(true); });
+    byId("sr-select-none").addEventListener("click", function () {
+      admin.selected_ids = {};
+      setShownSelected(false);
+    });
+    byId("sr-move-apply").addEventListener("click", moveSelected);
     document.querySelectorAll("#sr-year-tabs [data-year]").forEach(function (button) {
       button.addEventListener("click", function () {
         admin.year = button.getAttribute("data-year");
