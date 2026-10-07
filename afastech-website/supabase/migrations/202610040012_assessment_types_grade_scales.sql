@@ -12,7 +12,7 @@ create table public.assessment_types (
   short_code text not null check (length(trim(short_code)) between 1 and 10),
   short_code_key text generated always as (lower(trim(short_code))) stored unique,
   description text,
-  default_weighting numeric(4, 2) not null default 100
+  default_weighting numeric(5, 2) not null default 100
     check (default_weighting > 0 and default_weighting <= 100),
   display_order smallint not null default 0,
   is_active boolean not null default true,
@@ -420,7 +420,7 @@ grant execute on function public.calculate_grade_from_score(numeric, uuid) to au
 -- ============================================================================
 alter table public.academic_assessments
   add column if not exists assessment_type_id uuid references public.assessment_types (id) on delete set null,
-  add column if not exists weighting numeric(4, 2) check (weighting > 0 and weighting <= 100);
+  add column if not exists weighting numeric(5, 2) check (weighting > 0 and weighting <= 100);
 
 -- Backfill: default existing assessments to 'Exam' type
 update public.academic_assessments
