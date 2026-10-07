@@ -1852,6 +1852,25 @@ if (typeof window.initializeTranscriptImporter === "function") {
       });
   }
 
+  var refreshDashboardData = null;
+  var refreshing = false;
+
+  async function runDashboardRefresh() {
+    if (!refreshDashboardData || refreshing) return;
+    refreshing = true;
+    var content = document.querySelector("[data-dashboard-content]");
+    if (content) content.setAttribute("aria-busy", "true");
+    try {
+      await refreshDashboardData();
+    } catch (error) {
+      console.error("Dashboard refresh failed.", error);
+      if (error && /jwt expired/i.test(String(error.message || error))) window.location.reload();
+    } finally {
+      refreshing = false;
+      if (content) content.removeAttribute("aria-busy");
+    }
+  }
+
   function initializeDashboardNavigation() {
     var layout = document.querySelector("[data-dashboard-layout], .student-portal-layout");
     if (!layout || layout.dataset.navigationBound) return;
@@ -1904,6 +1923,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
       homeLink.addEventListener("click", function (event) {
         event.preventDefault();
         selectView("view-overview", true);
+        runDashboardRefresh();
       });
     }
     views.forEach(function (view) {
@@ -1917,6 +1937,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
         if (!document.getElementById(viewId)) return;
         event.preventDefault();
         selectView(viewId, true);
+        runDashboardRefresh();
       });
     });
     if (toggle && backdrop) {
@@ -2083,6 +2104,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
       document.querySelector("[data-dashboard-content]").hidden = false;
       initializeDashboardNavigation();
       if (requiredRole === "student") {
+        refreshDashboardData = function () { return loadStudentDashboard(client, session.user.id); };
         await loadStudentDashboard(client, session.user.id);
         try {
           await window.AfastechStudents.initStudent(client, session.user.id);
@@ -2094,10 +2116,12 @@ if (typeof window.initializeTranscriptImporter === "function") {
         initializePasswordChange(client, "student-password-form", "student-password-status");
       }
       else if (requiredRole === "staff") {
+        refreshDashboardData = function () { return loadStaffDashboard(client, session.user.id); };
         await loadStaffDashboard(client, session.user.id);
         initializePasswordChange(client, "staff-password-form", "staff-password-status");
       }
       else {
+        refreshDashboardData = function () { return loadAdminDashboard(client); };
         await loadAdminDashboard(client);
         initializeStaffInvite(client);
         initializeStudentImport(client);
