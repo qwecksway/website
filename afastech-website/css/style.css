@@ -5088,3 +5088,40 @@ body[data-page="admin-dashboard"] .admin-empty p {
 .sr-tile small{color:#5a6a85;line-height:1.4}
 .sr-tile-icon{display:inline-flex;width:42px;height:42px;align-items:center;justify-content:center;border-radius:10px;background:#e8effc;color:#235fd0}
 .sr-tile-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- Students module: premium polish ---- */
+.sr-card{background:#fff;border:1px solid #e3e9f3;border-radius:16px;box-shadow:0 1px 2px rgba(16,26,42,.04),0 10px 30px rgba(16,26,42,.06);padding:1.75rem 2rem}
+.sr-head{padding-bottom:1.1rem;border-bottom:1px solid #eef2f8;margin-bottom:1.4rem}
+.sr-head h2{font-size:1.45rem;letter-spacing:-.01em;color:#0b1b34}
+.sr-head p{color:#64748b;font-size:.95rem;line-height:1.5}
+.sr-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.25rem}
+.sr-tile{position:relative;overflow:hidden;gap:.65rem;padding:1.6rem 1.5rem 1.5rem;min-height:190px;background:linear-gradient(180deg,#fff 0%,#f8faff 100%);border:1px solid #dfe6f2;border-radius:16px;box-shadow:0 1px 2px rgba(16,26,42,.04);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.sr-tile::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--tile,#235fd0);opacity:.85}
+.sr-tile::after{content:"\2192";position:absolute;right:1.25rem;bottom:1.1rem;font-size:1.25rem;color:var(--tile,#235fd0);opacity:0;transform:translateX(-6px);transition:opacity .2s,transform .2s}
+.sr-tile:hover,.sr-tile:focus-visible{transform:translateY(-4px);border-color:var(--tile,#235fd0);box-shadow:0 14px 34px rgba(16,26,42,.12);outline:none}
+.sr-tile:hover::after,.sr-tile:focus-visible::after{opacity:1;transform:none}
+.sr-tile:nth-child(1){--tile:#235fd0;--tile-bg:#e8effc}
+.sr-tile:nth-child(2){--tile:#0f8a6d;--tile-bg:#e3f5ef}
+.sr-tile:nth-child(3){--tile:#7a4fd6;--tile-bg:#efe9fb}
+.sr-tile:nth-child(4){--tile:#d97706;--tile-bg:#fdf0dc}
+.sr-tile-icon{width:50px;height:50px;border-radius:14px;background:var(--tile-bg,#e8effc);color:var(--tile,#235fd0);margin-bottom:.25rem}
+.sr-tile-icon svg{width:25px;height:25px}
+.sr-tile strong{font-size:1.1rem;color:#0b1b34;letter-spacing:-.01em}
+.sr-tile small{font-size:.9rem;color:#64748b;line-height:1.5;padding-right:1.5rem}
+.sr-year-tabs{background:#f1f5fb;padding:.3rem;border-radius:12px;gap:.25rem}
+.sr-year-tabs .sr-tab{border:0;border-radius:9px;padding:.55rem 1rem;font-size:.9rem;color:#475569;transition:background .15s,color .15s}
+.sr-year-tabs .sr-tab:hover{color:#0b1b34}
+.sr-year-tabs .sr-tab.is-active{background:#fff;color:#235fd0;box-shadow:0 1px 4px rgba(16,26,42,.12)}
+.sr-fields{background:#fbfcfe;border:1px solid #e3e9f3;border-radius:14px;padding:1.25rem 1.5rem}
+.sr-fields legend{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:#235fd0;background:#fff;border-radius:999px;padding:.2rem .8rem;border:1px solid #e3e9f3}
+.sr-card .field label{font-size:.82rem;font-weight:600;color:#334155}
+.sr-card input[type=text],.sr-card input[type=search],.sr-card input[type=date],.sr-card input[type=tel],.sr-card input[type=number],.sr-card select,.sr-card textarea{border:1px solid #d5ddeb;border-radius:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.sr-card input:focus,.sr-card select:focus,.sr-card textarea:focus{border-color:#235fd0;box-shadow:0 0 0 3px rgba(35,95,208,.15);outline:none}
+.sr-card .btn{border-radius:10px;font-weight:600;padding:.65rem 1.2rem}
+.sr-card .btn-primary{box-shadow:0 4px 12px rgba(35,95,208,.25)}
+.sr-card .data-table{border-collapse:separate;border-spacing:0;width:100%;border:1px solid #e3e9f3;border-radius:12px;overflow:hidden}
+.sr-card .data-table th{background:#f3f6fb;color:#475569;font-size:.74rem;text-transform:uppercase;letter-spacing:.07em;padding:.8rem 1rem}
+.sr-card .data-table td{padding:.8rem 1rem;border-top:1px solid #eef2f8}
+.sr-card .data-table tbody tr:hover{background:#f8faff}
+.sr-photo,.sp-photo{border-radius:14px;box-shadow:0 4px 14px rgba(16,26,42,.1)}
+@media (max-width:700px){.sr-card{padding:1.25rem}.sr-tile{min-height:0}}
