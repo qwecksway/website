@@ -13,6 +13,21 @@
     status.className = "alert" + (type ? " alert-" + type : "");
   }
 
+  function setSelectOptions(select, items, placeholder, valueKey, labelBuilder) {
+    if (!select) return;
+    select.replaceChildren();
+    var empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = placeholder;
+    select.appendChild(empty);
+    (items || []).forEach(function (item) {
+      var option = document.createElement("option");
+      option.value = item[valueKey];
+      option.textContent = labelBuilder(item);
+      select.appendChild(option);
+    });
+  }
+
   function normalizeCell(value) {
     var normalized = String(value || "").replace(/\s+/g, " ").trim();
     return /^(?:-|—|–|n\/?a|na)$/i.test(normalized) ? "" : normalized;
@@ -785,24 +800,24 @@
       var previewEl = document.getElementById("admin-batch-preview");
 
       if (!file) {
-        setStatus("admin-batch-status", "Choose a PDF file first.", "error");
+        setBatchStatusLocal("admin-batch-status", "Choose a PDF file first.", "error");
         button.disabled = false;
         return;
       }
 
       if (file.size > 50000000) {
-        setStatus("admin-batch-status", "PDF must be smaller than 50 MB.", "error");
+        setBatchStatusLocal("admin-batch-status", "PDF must be smaller than 50 MB.", "error");
         button.disabled = false;
         return;
       }
 
       if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
-        setStatus("admin-batch-status", "Select a PDF file.", "error");
+        setBatchStatusLocal("admin-batch-status", "Select a PDF file.", "error");
         button.disabled = false;
         return;
       }
 
-      setStatus("admin-batch-status", "Reading PDF locally in this browser...", "success");
+      setBatchStatusLocal("admin-batch-status", "Reading PDF locally in this browser...", "success");
 
       var iframe = document.getElementById("admin-batch-pdf-preview");
 
@@ -850,7 +865,7 @@
               else await loadingTask.destroy();
             }
           } catch (error) {
-            setStatus("admin-batch-status", error.message, "error");
+            setBatchStatusLocal("admin-batch-status", error.message, "error");
             previewEl.hidden = true;
           } finally {
             button.disabled = false;
@@ -858,7 +873,7 @@
         };
         pdfReader.readAsArrayBuffer(file);
       } catch (error) {
-        setStatus("admin-batch-status", "Could not read the PDF: " + error.message, "error");
+        setBatchStatusLocal("admin-batch-status", "Could not read the PDF: " + error.message, "error");
         previewEl.hidden = true;
         button.disabled = false;
       }
@@ -877,7 +892,7 @@
     document.getElementById("admin-batch-apply").addEventListener("click", async function () {
       var applyBtn = this;
       applyBtn.disabled = true;
-      setStatus("admin-batch-status", "Applying results to database...", "success");
+      setBatchStatusLocal("admin-batch-status", "Applying results to database...", "success");
 
       try {
         var assessmentId = document.getElementById("admin-batch-assessment").value;
@@ -904,13 +919,13 @@
           if (!result.error) applied++;
         }
 
-        setStatus("admin-batch-status", applied + " results saved to database.", "success");
+        setBatchStatusLocal("admin-batch-status", applied + " results saved to database.", "success");
 
         document.getElementById("admin-batch-preview").hidden = true;
         document.getElementById("admin-batch-file").value = "";
         batchResultsData = [];
       } catch (error) {
-        setStatus("admin-batch-status", "Could not apply results: " + (error.message || "Unknown error"), "error");
+        setBatchStatusLocal("admin-batch-status", "Could not apply results: " + (error.message || "Unknown error"), "error");
       } finally {
         applyBtn.disabled = false;
       }
@@ -1019,7 +1034,7 @@
     document.getElementById("admin-batch-apply").disabled = unmatchedCount > 0 || !batchResultsData.length;
   }
 
-  function setStatus(id, message, kind) {
+  function setBatchStatusLocal(id, message, kind) {
     var el = document.getElementById(id);
     if (!el) return;
     el.textContent = message || "";
@@ -1034,6 +1049,6 @@
   window.extractBatchResults = extractBatchResults;
   window.detectClassResultsFormat = detectClassResultsFormat;
   window.setBatchSetOptions = setSelectOptions;
-  window.setBatchStatus = setStatus;
+  window.setBatchStatus = setBatchStatusLocal;
   window.batchClient = function () { return batchClient; };
 })();
