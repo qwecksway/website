@@ -87,18 +87,22 @@
       '<div><strong>Head of Academics:</strong><div class="rs-line"></div><span>Signature</span></div></div></div>';
   }
 
+  var fitCss = "@page{size:A4 portrait;margin:10mm}html,body{margin:0;padding:0}#fit{width:718px}";
+  // Scales the page down so the whole statement fits on one sheet of paper.
+  var fitJs = "function fit(){var f=document.getElementById('fit');f.style.zoom=1;var z=Math.min(1,718/Math.max(f.scrollWidth,718),1040/f.scrollHeight);f.style.zoom=z;}";
+
   function printDoc(html) {
     var win = window.open("", "_blank");
     if (!win) {
       window.alert("Allow pop-ups for this site to print the statement.");
       return;
     }
-    win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Statement of Results</title><style>body{margin:24px;font-size:13px}' +
-      css + ".rs-doc{border:0;padding:0}</style></head><body>" + html + "</body></html>");
+    win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Statement of Results</title><style>body{font-size:13px}' +
+      css + ".rs-doc{border:0;padding:0}" + fitCss + "</style></head><body><div id=\"fit\">" + html + "</div><script>" + fitJs + "<\/script></body></html>");
     win.document.close();
     win.focus();
-    win.onload = function () { win.print(); };
-    setTimeout(function () { try { win.print(); } catch (e) { /* closed */ } }, 600);
+    win.onload = function () { win.fit(); win.print(); };
+    
   }
 
   async function render(client, container) {

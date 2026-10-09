@@ -73,6 +73,10 @@
     ".fee-title{font-size:18px;text-decoration:underline;text-align:center;margin:14px 0;font-weight:bold}" +
     ".fee-sign{display:flex;gap:40px;margin-top:40px}.fee-sign>div{flex:1}.fee-line{border-bottom:1px solid #000;height:36px;margin-bottom:10px}";
 
+  var fitCss = "@page{size:A4 portrait;margin:10mm}html,body{margin:0;padding:0}#fit{width:718px}";
+  // Scales the page down so the whole statement fits on one sheet of paper.
+  var fitJs = "function fit(){var f=document.getElementById('fit');f.style.zoom=1;var z=Math.min(1,718/Math.max(f.scrollWidth,718),1040/f.scrollHeight);f.style.zoom=z;}";
+
   function printStatement(s) {
     var win = window.open("", "_blank");
     if (!win) {
@@ -80,11 +84,11 @@
       return;
     }
     win.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><title>Fee Statement</title><style>" + printCss +
-      "</style></head><body>" + statementHtml(s) + "</body></html>");
+      "body{margin:0}" + fitCss + "</style></head><body><div id=\"fit\">" + statementHtml(s) + "</div><script>" + fitJs + "<\/script></body></html>");
     win.document.close();
     win.focus();
-    win.onload = function () { win.print(); };
-    setTimeout(function () { try { win.print(); } catch (e) { /* closed */ } }, 600);
+    win.onload = function () { win.fit(); win.print(); };
+    
   }
 
   function ensureStyles() {
