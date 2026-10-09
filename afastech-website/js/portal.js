@@ -565,7 +565,10 @@
       if (el) el.textContent = pair[1];
     });
     [
-      ["fee records", function () { renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client); }],
+      ["fee records", function () {
+        renderFeeRecordsFromData(results[2].data || [], "admin-student-fees", client);
+        if (window.AfastechFees) window.AfastechFees.initCharges(client, results[2].data || []);
+      }],
       ["house controls", function () { renderAdminHouseControls(client, results[3].data || [], houses); }],
       ["staff details", function () { renderAdminStaffDetails(client, results[4].data || []); }],
       ["student records", function () {

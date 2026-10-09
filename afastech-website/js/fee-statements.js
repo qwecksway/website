@@ -16,6 +16,14 @@
     return String(value || "").replace(/^SHS\s*/i, "Year ");
   }
 
+  function itemRows(s) {
+    var base = s.base_fees != null ? s.base_fees : s.total_fees;
+    var rows = [{ description: s.item_description || "School Fees", amount: base }].concat(s.items || []);
+    return rows.map(function (row, index) {
+      return "<tr><td>" + (index + 1) + "</td><td>" + esc(row.description) + '</td><td class="num">' + money(row.amount) + "</td></tr>";
+    }).join("");
+  }
+
   function statementHtml(s) {
     var paid = Number(s.amount_paid) || 0;
     var payable = Number(s.amount_payable) || 0;
@@ -35,7 +43,7 @@
       "<tr><th>Level / Year:</th><td colspan=\"3\">" + esc(yearLabel(s.year) || "-") + "</td></tr>" +
       "</table>" +
       '<table class="fee-items"><thead><tr><th>Sn</th><th>Item</th><th class="num">Amount (GHS)</th></tr></thead><tbody>' +
-      "<tr><td>1</td><td>" + esc(s.item_description || "School Fees") + '</td><td class="num">' + money(s.total_fees) + "</td></tr>" +
+      itemRows(s) +
       '<tr class="fee-total"><td colspan="2" class="num"><strong>Total</strong></td><td class="num"><strong>' + money(s.total_fees) + "</strong></td></tr>" +
       "</tbody></table>" +
       '<table class="fee-summary">' +
@@ -128,7 +136,9 @@
     overlay.innerHTML = "<form><h2>Fee statement</h2><p><strong>" + esc(s.student_name || "Student") + "</strong> · " + esc(s.index_number || "") + "</p>" +
       '<div class="field"><label>Academic year</label><input name="academic_year" maxlength="20" placeholder="2026/2027" value="' + esc(s.academic_year) + '"></div>' +
       '<div class="field"><label>Fee item</label><input name="item" maxlength="200" value="' + esc(s.item_description) + '"></div>' +
-      '<div class="field"><label>Total amount owed (GHS)</label><input name="total" type="number" step="0.01" min="0" required value="' + esc(s.total_fees) + '"></div>' +
+      '<div class="field"><label>Total amount owed (GHS)</label><input name="total" type="number" step="0.01" min="0" required value="' + esc(s.base_fees != null ? s.base_fees : s.total_fees) + '"></div>' +
+      ((s.items || []).length ? '<p style="color:#555;font-size:.85rem;">Plus ' + s.items.length + " added charge(s) totalling GHS " +
+        money(s.items.reduce(function (sum, i) { return sum + Number(i.amount); }, 0)) + " (managed under Finance &rarr; Add a charge).</p>" : "") +
       '<div class="field"><label>Balance from previous year (GHS, negative for credit)</label><input name="previous" type="number" step="0.01" required value="' + esc(s.previous_balance) + '"></div>' +
       '<div class="field"><label>Amount paid (GHS)</label><input name="paid" type="number" step="0.01" min="0" required value="' + esc(s.amount_paid) + '"></div>' +
       '<div class="fee-readout">Balance (amount payable): <span data-balance></span></div>' +
@@ -145,11 +155,12 @@
       var total = parseFloat(form.total.value) || 0;
       var previous = parseFloat(form.previous.value) || 0;
       var paid = parseFloat(form.paid.value) || 0;
+      var extra = (s.items || []).reduce(function (sum, i) { return sum + Number(i.amount); }, 0);
       return {
         student_name: s.student_name, index_number: s.index_number, programme: s.programme, year: s.year,
         academic_year: form.academic_year.value.trim(), item_description: form.item.value.trim() || "School Fees",
-        total_fees: total, previous_balance: previous, amount_paid: paid,
-        amount_payable: Math.round((total + previous - paid) * 100) / 100
+        base_fees: total, items: s.items || [], total_fees: total + extra, previous_balance: previous, amount_paid: paid,
+        amount_payable: Math.round((total + extra + previous - paid) * 100) / 100
       };
     }
     function refresh() {
@@ -169,7 +180,7 @@
         target_student_id: record.student_id,
         target_academic_year: c.academic_year,
         target_item: c.item_description,
-        target_total: c.total_fees,
+        target_total: c.base_fees,
         target_previous: c.previous_balance,
         target_paid: c.amount_paid
       });
@@ -180,5 +191,107 @@
     });
   }
 
-  window.AfastechFees = { renderStudent: renderStudent, openEditor: openEditor };
+  async function initCharges(client, students) {
+    var box = document.getElementById("admin-fee-charges");
+    if (!box || box.dataset.ready) return;
+    box.dataset.ready = "true";
+    ensureStyles(); = await client.rpc("fee_charge_options");
+    if (opts.error) {
+      box.textContent = "Fee charges are unavailable. Apply the latest Supabase migration (supabase db push).";
+      return;
+    }
+    var years = opts.data.years || [];
+    var programmes = opts.data.programmes || [];
+    function options(list) { return list.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + "</option>"; }).join(""); }
+    box.innerHTML = '<h3 style="margin-top:0">Add a charge</h3>' +
+      '<p style="color:var(--stone);margin-top:0">Add a new fee item to students\' statements. Each charge appears as its own line on the statement.</p>' +
+      '<form class="fee-charge-form">' +
+      '<div class="field"><label>Item description</label><input name="description" maxlength="200" required placeholder="e.g. PTA Levy"></div>' +
+      '<div class="field"><label>Amount (GHS, negative for a discount)</label><input name="amount" type="number" step="0.01" required></div>' +
+      '<div class="field"><label>Apply to</label><select name="scope"><option value="year">A whole year</option><option value="programme">A programme</option>' +
+      '<option value="student">One student</option><option value="all">All students</option></select></div>' +
+      '<div class="field" data-scope="year"><label>Year</label><select name="year">' + options(years) + "</select></div>" +
+      '<div class="field" data-scope="programme" hidden><label>Programme</label><select name="programme">' + options(programmes) + "</select></div>" +
+      '<div class="field" data-scope="student" hidden><label>Student</label><select name="student">' +
+      students.map(function (st) { return '<option value="' + esc(st.student_id) + '">' + esc(st.full_name || "Unnamed") + "</option>"; }).join("") + "</select></div>" +
+      '<div class="fee-actions"><button class="btn btn-primary" type="submit">Add charge</button></div>' +
+      '<p class="alert" role="status" style="margin-top:1rem;"></p></form>' +
+      '<h3>Charge history</h3><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Date</th><th>Item</th><th>Amount (GHS)</th><th>Applied to</th><th>Students</th><th></th></tr></thead>' +
+      '<tbody data-charge-history></tbody></table></div>';
+    var form = box.querySelector("form");
+    var status = box.querySelector(".alert");
+    var history = box.querySelector("[data-charge-history]");
+
+    function scopeFields() {
+      form.querySelectorAll("[data-scope]").forEach(function (el) { el.hidden = el.getAttribute("data-scope") !== form.scope.value; });
+    }
+    form.scope.addEventListener("change", scopeFields);
+    scopeFields();
+
+    function scopeArgs() {
+      var type = form.scope.value;
+      return {
+        scope_type: type,
+        scope_value: type === "year" ? form.year.value : type === "programme" ? form.programme.value : "",
+        target_student_id: type === "student" ? form.student.value || null : null
+      };
+    }
+    function say(text, ok) { status.textContent = text; status.className = "alert show " + (ok ? "alert-success" : "alert-error"); }
+
+    async function loadHistory() {
+      var res = await client.rpc("list_fee_charges");
+      history.replaceChildren();
+      var list = res.data || [];
+      if (res.error || !list.length) {
+        history.innerHTML = '<tr><td colspan="6">' + (res.error ? "Could not load charges." : "No charges have been added yet.") + "</td></tr>";
+        return;
+      }
+      list.forEach(function (c) {
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + esc(new Date(c.created_at).toLocaleDateString("en-GB")) + "</td><td>" + esc(c.description) + "</td><td>" + money(c.amount) +
+          "</td><td>" + esc(c.scope_label) + "</td><td>" + c.student_count + "</td><td></td>";
+        var cell = tr.lastChild;
+        if (c.voided) {
+          cell.textContent = "Reversed";
+        } else {
+          var undo = document.createElement("button");
+          undo.type = "button";
+          undo.className = "btn btn-outline";
+          undo.textContent = "Reverse";
+          undo.addEventListener("click", async function () {
+            if (!window.confirm("Reverse \"" + c.description + "\"? It will be removed from " + c.student_count + " student statement(s).")) return;
+            undo.disabled = true;
+            var r = await client.rpc("void_fee_charge", { target_charge_id: c.id });
+            say(r.error ? "Could not reverse: " + r.error.message : "Charge reversed.", !r.error);
+            loadHistory();
+          });
+          cell.appendChild(undo);
+        }
+        history.appendChild(tr);
+      });
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var args = scopeArgs();
+      var amount = parseFloat(form.amount.value);
+      var description = form.description.value.trim();
+      var button = form.querySelector("button[type='submit']");
+      button.disabled = true;
+      var preview = await client.rpc("preview_fee_charge", args);
+      if (preview.error) { say("Could not check recipients: " + preview.error.message, false); button.disabled = false; return; }
+      var ok = window.confirm("Add \"" + description + "\" of GHS " + money(amount) + " to " + preview.data + " student(s)? Total: GHS " + money(amount * preview.data));
+      if (!ok) { button.disabled = false; return; }
+      var res = await client.rpc("apply_fee_charge", Object.assign({ charge_description: description, charge_amount: amount }, args));
+      button.disabled = false;
+      if (res.error) { say("Could not add the charge: " + res.error.message, false); return; }
+      say("Added to " + res.data + " student statement(s).", true);
+      form.description.value = "";
+      form.amount.value = "";
+      loadHistory();
+    });
+    loadHistory();
+  }
+
+  window.AfastechFees = { renderStudent: renderStudent, openEditor: openEditor, initCharges: initCharges };
 })();
