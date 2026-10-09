@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   function esc(value) {
@@ -40,7 +40,8 @@
       "<tr><th>Student Name:</th><td colspan=\"3\">" + esc(s.student_name || "-") + "</td></tr>" +
       "<tr><th>Programme:</th><td colspan=\"3\">" + esc(s.programme || "-") + "</td></tr>" +
       "<tr><th>Academic Year:</th><td>" + esc(s.academic_year || "-") + "</td><th>Semester:</th><td>" + esc(s.semester || "-") + "</td></tr>" +
-      "<tr><th>Level / Year:</th><td>" + esc(yearLabel(s.year) || "-") + "</td><th>Currency:</th><td>GHs</td></tr>" +
+      "<tr><th>Level / Year:</th><td>" + esc(yearLabel(s.year) || "-") + "</td><th>Class:</th><td>" + esc(s.class || "-") + "</td></tr>" +
+      "<tr><th>Currency:</th><td colspan=\"3\">GHs</td></tr>" +
       "</table>" +
       '<table class="fee-items"><thead><tr><th>Sn</th><th>Item</th><th class="num">Amount (GHS)</th></tr></thead><tbody>' +
       itemRows(s) +

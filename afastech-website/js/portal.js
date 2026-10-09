@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   
   "use strict";
 
@@ -158,9 +158,7 @@
       var termLabel = [ctx.academic_year, ctx.semester].filter(Boolean).join(" · ");
       if (termLabel) document.querySelector("[data-student-term]").textContent = termLabel;
       if (ctx.class_name) {
-        var classLabel = String(ctx.class_name).replace(/^SHS\s*/, "Year ");
-        document.querySelector("[data-student-form-class]").textContent = classLabel;
-        document.querySelector("[data-student-personal-class]").textContent = classLabel;
+        document.querySelector("[data-student-assigned-class]").textContent = ctx.class_name;
       }
     }
     if (window.AfastechResults) {

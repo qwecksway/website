@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   function esc(value) {
@@ -55,7 +55,7 @@
         "<td>" + esc(num(s.grade_point)) + '</td><td class="rs-left">' + esc(s.description) + "</td></tr>";
     }).join("") || '<tr><td class="rs-left" colspan="' + (types.length + 5) + '">No subjects have been set up for this class yet.</td></tr>';
     return '<div class="rs-term">' + esc(term.year) + " Academic Year &mdash; " + esc(term.term) +
-      (term.class_name ? " &mdash; " + esc(classLabel(term.class_name)) : "") + "</div>" +
+      (term.class_name ? " &mdash; " + esc(term.class_name) : "") + "</div>" +
       '<table class="rs-table"><thead><tr>' + head + "</tr></thead><tbody>" + rows + "</tbody></table>" +
       '<table class="rs-gpa"><tr><th>Semester GPA:</th><td><strong>' + esc(num(term.gpa)) + "</strong></td></tr></table>";
   }
@@ -75,7 +75,7 @@
       '<tr><th>Student Name:</th><td colspan="3">' + esc(info.name || "-") + "</td></tr>" +
       '<tr><th>Programme:</th><td colspan="3">' + esc(info.programme || "-") + "</td></tr>" +
       "<tr><th>Academic Year:</th><td>" + esc(latest.year || "-") + "</td><th>Semester:</th><td>" + esc(latest.term || "-") + "</td></tr>" +
-      '<tr><th>Class:</th><td colspan="3">' + esc(classLabel(latest.class_name) || "-") + "</td></tr>" +
+      '<tr><th>Class:</th><td colspan="3">' + esc(latest.class_name || "-") + "</td></tr>" +
       "</table>" +
       terms.map(function (t) { return termHtml(report, t); }).join("") +
       '<table class="rs-sum">' +

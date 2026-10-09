@@ -87,74 +87,6 @@ begin
 end;
 $$;
 
--- A student's class (student_details) always drives their enrolment for the current year.
-create or replace function public.sync_student_enrolment()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_year uuid;
-  v_prog uuid;
-  v_class uuid;
-  class_label text := trim(coalesce(new.form_class, ''));
-  programme_label text := coalesce(nullif(trim(coalesce(new.programme, '')), ''), 'General');
-begin
-  if class_label = '' then return null; end if;
-  if tg_op = 'UPDATE' and old.form_class is not distinct from new.form_class
-     and old.programme is not distinct from new.programme then
-    return null;
-  end if;
-  if not exists (select 1 from public.profiles where id = new.profile_id and role::text = 'student') then
-    return null;
-  end if;
-  select id into v_year from public.academic_years where is_current limit 1;
-  if v_year is null then return null; end if;
-
-  insert into public.academic_programmes (name) values (programme_label) on conflict (name_key) do nothing;
-  select id into v_prog from public.academic_programmes where name_key = lower(programme_label);
-  insert into public.academic_classes (programme_id, name) values (v_prog, class_label)
-    on conflict (programme_id, name_key) do nothing;
-  select id into v_class from public.academic_classes
-    where programme_id = v_prog and name_key = lower(class_label);
-
-  insert into public.academic_enrolments (student_id, class_id, academic_year_id)
-  values (new.profile_id, v_class, v_year)
-  on conflict (student_id, academic_year_id) do update set class_id = excluded.class_id;
-  return null;
-end;
-$$;
-
-drop trigger if exists student_details_sync_enrolment on public.student_details;
-create trigger student_details_sync_enrolment
-  after insert or update of form_class, programme on public.student_details
-  for each row execute function public.sync_student_enrolment();
-
--- Backfill enrolments for the current year from existing student records.
-insert into public.academic_programmes (name)
-select distinct coalesce(nullif(trim(sd.programme), ''), 'General')
-from public.student_details as sd
-where nullif(trim(sd.form_class), '') is not null
-on conflict (name_key) do nothing;
-
-insert into public.academic_classes (programme_id, name)
-select distinct p.id, trim(sd.form_class)
-from public.student_details as sd
-join public.academic_programmes as p on p.name_key = lower(coalesce(nullif(trim(sd.programme), ''), 'General'))
-where nullif(trim(sd.form_class), '') is not null
-on conflict (programme_id, name_key) do nothing;
-
-insert into public.academic_enrolments (student_id, class_id, academic_year_id)
-select sd.profile_id, c.id, y.id
-from public.student_details as sd
-join public.profiles as pr on pr.id = sd.profile_id and pr.role::text = 'student'
-join public.academic_years as y on y.is_current
-join public.academic_programmes as p on p.name_key = lower(coalesce(nullif(trim(sd.programme), ''), 'General'))
-join public.academic_classes as c on c.programme_id = p.id and c.name_key = lower(trim(sd.form_class))
-where nullif(trim(sd.form_class), '') is not null
-on conflict (student_id, academic_year_id) do nothing;
-
 -- ---------------------------------------------------------------------------
 -- Score sheet import
 -- ---------------------------------------------------------------------------
@@ -464,12 +396,11 @@ as $$
     'student_name', p.full_name,
     'index_number', sd.index_number,
     'programme', sd.programme,
-    'year', coalesce(
-      (select c.name from public.academic_enrolments as e
+    'year', sd.form_class,
+    'class', (select c.name from public.academic_enrolments as e
        join public.academic_years as y on y.id = e.academic_year_id and y.is_current
        join public.academic_classes as c on c.id = e.class_id
        where e.student_id = p.id limit 1),
-      sd.form_class),
     'house_name', h.name,
     'academic_year', coalesce((select y.name from public.academic_years as y where y.is_current limit 1), fs.academic_year, ''),
     'semester', coalesce((select t.name from public.academic_terms as t where t.is_current limit 1), ''),
