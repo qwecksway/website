@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Super Admin Dashboard — AFASTECH</title>
+<title>Super Admin Dashboard â€” AFASTECH</title>
 <link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
@@ -351,7 +351,7 @@
 
         <section class="card">
         <h3>Staff job titles and departments</h3>
-        <div class="field"><label for="admin-staff-picker">Staff member</label><select id="admin-staff-picker"><option value="">Select a staff member…</option></select></div>
+        <div class="field"><label for="admin-staff-picker">Staff member</label><select id="admin-staff-picker"><option value="">Select a staff memberâ€¦</option></select></div>
         <p style="color:var(--stone);">Only staff explicitly assigned the House Master or House Mistress job title can be assigned to a house.</p>
         <div style="overflow-x:auto;margin-bottom:2rem;">
           <table class="data-table">
@@ -388,7 +388,7 @@
                 <section id="view-grade-scales" class="dashboard-view" data-dashboard-view hidden>
                         <section id="grade-scales" style="margin-bottom:2.5rem;">
                           <h2>Grade scales</h2>
-                          <p style="color:var(--stone);">Define grading scales (e.g., WASSCE A1–F9) with grade points for GPA calculation. One scale is marked as default for new academic years.</p>
+                          <p style="color:var(--stone);">Define grading scales (e.g., WASSCE A1â€“F9) with grade points for GPA calculation. One scale is marked as default for new academic years.</p>
                           <form id="admin-grade-scale-form" class="card" style="margin-bottom:2rem;">
                             <h3>Add or update grade scale</h3>
                             <div class="field"><label for="admin-gs-name">Scale name</label><input id="admin-gs-name" maxlength="80" placeholder="WASSCE Standard" required></div>
@@ -509,40 +509,31 @@
         <section id="view-batch-results" class="dashboard-view" data-dashboard-view hidden>
         <section id="batch-results" style="margin-bottom:2.5rem;">
           <h2>Batch results import</h2>
-          <p>Import assessment results from a PDF class result sheet. The file is read locally in the browser and not uploaded or stored.</p>
+          <p style="color:var(--stone);">Upload an Excel or CSV score sheet for one assessment type of one subject. Rows are matched on CassRefID and the scores are published for the current academic year and semester.</p>
           <form id="admin-batch-results-form" class="card">
+            <div class="field"><label for="admin-batch-class">Class</label><select id="admin-batch-class" required></select></div>
+            <div class="field"><label for="admin-batch-subject">Subject</label><select id="admin-batch-subject" required></select></div>
+            <div class="field"><label for="admin-batch-type">Assessment type</label><select id="admin-batch-type" required></select></div>
+            <div class="field"><label for="admin-batch-max">Scores are out of</label><input id="admin-batch-max" type="number" min="1" max="100" step="0.01" value="100" required></div>
             <div class="field">
-              <label for="admin-batch-assessment">Assessment</label>
-              <select id="admin-batch-assessment" required></select>
+              <label for="admin-batch-file">Score sheet (.xlsx, .xls or .csv)</label>
+              <input id="admin-batch-file" type="file" accept=".xlsx,.xls,.csv,text/csv" required>
+              <small style="color:var(--stone);">Needs a CassRefID column (also accepted: RefID, Index Number) and a Score column (or Mark/Total). If there is no Score heading, the last column is used.</small>
             </div>
-            <div class="field">
-              <label for="admin-batch-class-subject">Class & Subject</label>
-              <select id="admin-batch-class-subject" required></select>
-            </div>
-            <div class="field">
-              <label for="admin-batch-file">Class result PDF</label>
-              <input id="admin-batch-file" type="file" accept="application/pdf,.pdf" required>
-            </div>
-            <button class="btn btn-primary" type="submit">Read PDF and extract results</button>
+            <button class="btn btn-primary" type="submit">Read file and preview</button>
           </form>
           <p id="admin-batch-status" class="alert" role="status" style="margin-top:1rem;"></p>
-          
           <section class="card" id="admin-batch-preview" hidden style="margin-top:1.5rem;">
-            <div class="field">
-              <label>PDF Preview:</label>
-              <iframe id="admin-batch-pdf-preview" title="Local class results PDF preview" style="width:100%; height:300px;"></iframe>
-            </div>
-            <h3>Extracted results (preview)</h3>
-            <p>Review the extracted student scores. Incomplete or unmatched entries will appear below.</p>
+            <h3>Preview</h3>
+            <p id="admin-batch-summary"></p>
             <div style="overflow-x:auto;margin-bottom:1rem;">
               <table class="data-table">
-                <thead><tr><th>Student ID</th><th>Index #</th><th>Score</th><th>Action</th></tr></thead>
+                <thead><tr><th>CassRefID</th><th>Student</th><th>Score</th><th>Check</th></tr></thead>
                 <tbody id="admin-batch-results-list"></tbody>
               </table>
             </div>
-            <p id="admin-batch-unmatched-status" class="alert" role="status" style="color:var(--stone);"></p>
             <button id="admin-batch-clear" class="btn btn-outline" type="button">Clear and start over</button>
-            <button id="admin-batch-apply" class="btn btn-primary" type="button" disabled>Save results to database</button>
+            <button id="admin-batch-apply" class="btn btn-primary" type="button" disabled>Save and publish scores</button>
           </section>
         </section>
         </section>
@@ -574,7 +565,7 @@
         <section id="view-fees" class="dashboard-view" data-dashboard-view hidden>
         <section id="fees" style="margin-bottom:2.5rem;">
           <h2>Finance</h2>
-          <div id="admin-fee-charges" class="card" style="margin:1rem 0 2rem;padding:1.25rem;">Loading…</div>
+          <div id="admin-fee-charges" class="card" style="margin:1rem 0 2rem;padding:1.25rem;">Loadingâ€¦</div>
           <p style="color:var(--stone);">Student fee records. These are the same records shown on each student's dashboard.</p>
           <div style="overflow-x:auto;">
             <table class="data-table" style="margin-bottom:1rem;">
@@ -649,8 +640,9 @@
 </script>
 <script src="js/supabase-config.js"></script>
 <script src="js/student-records.js"></script>
-<script src="js/fee-statements.js?v=3"></script>
-<script src="js/portal.js?v=5"></script>
+<script src="js/fee-statements.js?v=4"></script>
+<script src="js/portal.js?v=6"></script>
 <script src="js/transcript-import.js"></script>
+<script src="js/batch-scores.js"></script>
 </body>
 </html>

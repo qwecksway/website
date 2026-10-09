@@ -39,8 +39,8 @@
       "<tr><th>Student ID / Index Number:</th><td>" + esc(s.index_number || "-") + "</td><th>Date:</th><td>" + esc(now) + "</td></tr>" +
       "<tr><th>Student Name:</th><td colspan=\"3\">" + esc(s.student_name || "-") + "</td></tr>" +
       "<tr><th>Programme:</th><td colspan=\"3\">" + esc(s.programme || "-") + "</td></tr>" +
-      "<tr><th>Academic Year:</th><td>" + esc(s.academic_year || "-") + "</td><th>Currency:</th><td>GHs</td></tr>" +
-      "<tr><th>Level / Year:</th><td colspan=\"3\">" + esc(yearLabel(s.year) || "-") + "</td></tr>" +
+      "<tr><th>Academic Year:</th><td>" + esc(s.academic_year || "-") + "</td><th>Semester:</th><td>" + esc(s.semester || "-") + "</td></tr>" +
+      "<tr><th>Level / Year:</th><td>" + esc(yearLabel(s.year) || "-") + "</td><th>Currency:</th><td>GHs</td></tr>" +
       "</table>" +
       '<table class="fee-items"><thead><tr><th>Sn</th><th>Item</th><th class="num">Amount (GHS)</th></tr></thead><tbody>' +
       itemRows(s) +

@@ -151,6 +151,22 @@
 
     if (window.AfastechFees) window.AfastechFees.renderStudent(client);
 
+    // Current academic year, semester and class come from the academic setup.
+    var context = await client.rpc("student_academic_context");
+    if (!context.error && context.data) {
+      var ctx = context.data;
+      var termLabel = [ctx.academic_year, ctx.semester].filter(Boolean).join(" · ");
+      if (termLabel) document.querySelector("[data-student-term]").textContent = termLabel;
+      if (ctx.class_name) {
+        var classLabel = String(ctx.class_name).replace(/^SHS\s*/, "Year ");
+        document.querySelector("[data-student-form-class]").textContent = classLabel;
+        document.querySelector("[data-student-personal-class]").textContent = classLabel;
+      }
+    }
+    if (window.AfastechResults) {
+      window.AfastechResults.render(client, document.getElementById("student-results-report"));
+    }
+
     var weekdays = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     renderRows(document.getElementById("student-timetable"), results[1].data || [], [
       function (row) { return weekdays[row.weekday] || ""; },
@@ -888,7 +904,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
         window.initializeTranscriptImporter(client, students);
       }
       if (typeof window.initializeBatchResultImporter === "function") {
-        window.initializeBatchResultImporter(client, data.assessments || []);
+        window.initializeBatchResultImporter(client, data);
       }
     setSelectOptions(document.getElementById("admin-academic-allocation-teacher"), staff, "Unassigned", "id", function (item) {
       return item.full_name || "Staff member";
