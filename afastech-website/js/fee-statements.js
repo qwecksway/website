@@ -195,7 +195,8 @@
     var box = document.getElementById("admin-fee-charges");
     if (!box || box.dataset.ready) return;
     box.dataset.ready = "true";
-    ensureStyles(); = await client.rpc("fee_charge_options");
+    ensureStyles();
+    var opts = await client.rpc("fee_charge_options");
     if (opts.error) {
       box.textContent = "Fee charges are unavailable. Apply the latest Supabase migration (supabase db push).";
       return;
