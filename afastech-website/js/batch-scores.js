@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var SHEETJS_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
@@ -116,7 +116,6 @@
 
   function args(commit) {
     return {
-      target_class_id: el("admin-batch-class").value,
       target_subject_id: el("admin-batch-subject").value,
       target_assessment_type_id: el("admin-batch-type").value,
       target_max_score: parseFloat(el("admin-batch-max").value),
@@ -130,7 +129,7 @@
     body.replaceChildren();
     (result.rows || []).forEach(function (row) {
       var tr = document.createElement("tr");
-      [row.ref, row.name || "—", row.score, row.status === "ok" ? "Ready" : row.status].forEach(function (text, index) {
+      [row.ref, row.name || "—", row.score, row.status === "ok" ? "Ready" + (row.class ? " · " + row.class : "") : row.status].forEach(function (text, index) {
         var td = document.createElement("td");
         td.textContent = text;
         if (index === 3) td.style.color = row.status === "ok" ? "#1b6e2d" : "#b00020";
@@ -138,7 +137,7 @@
       });
       body.appendChild(tr);
     });
-    el("admin-batch-summary").textContent = result.class + " · " + result.subject + " · " + result.assessment + " — " +
+    el("admin-batch-summary").textContent = result.subject + " · " + result.assessment + " — " +
       result.year + ", " + result.term + ". " + result.saved + " row(s) ready, " + result.problems + " with problems (skipped).";
     el("admin-batch-apply").disabled = !result.saved;
     el("admin-batch-preview").hidden = false;
@@ -199,13 +198,24 @@
     });
   }
 
+  // Keeps the dropdown in step with the Assessment types menu (active types only).
+  async function refreshTypes() {
+    var select = el("admin-batch-type");
+    if (!select || !client) return;
+    var result = await client.rpc("list_active_assessment_types");
+    if (!result.error && result.data) {
+      fillSelect(select, result.data, "Choose an assessment type", function (t) { return t.name; });
+    }
+  }
+
   window.initializeBatchResultImporter = function (supabaseClient, data) {
     client = supabaseClient;
-    if (!el("admin-batch-class")) return;
+    if (!el("admin-batch-subject")) return;
     data = data || {};
-    fillSelect(el("admin-batch-class"), data.classes || [], "Choose a class", function (c) { return c.name + " — " + c.programme; });
     fillSelect(el("admin-batch-subject"), data.subjects || [], "Choose a subject", function (s) { return s.name; });
     fillSelect(el("admin-batch-type"), data.assessment_types || [], "Choose an assessment type", function (t) { return t.name; });
     bind();
+    refreshTypes();
+    el("admin-batch-type").addEventListener("focus", refreshTypes);
   };
 })();

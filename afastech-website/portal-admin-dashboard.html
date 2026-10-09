@@ -511,7 +511,6 @@
           <h2>Batch results import</h2>
           <p style="color:var(--stone);">Upload an Excel or CSV score sheet for one assessment type of one subject. Rows are matched on CassRefID and the scores are published for the current academic year and semester.</p>
           <form id="admin-batch-results-form" class="card">
-            <div class="field"><label for="admin-batch-class">Class</label><select id="admin-batch-class" required></select></div>
             <div class="field"><label for="admin-batch-subject">Subject</label><select id="admin-batch-subject" required></select></div>
             <div class="field"><label for="admin-batch-type">Assessment type</label><select id="admin-batch-type" required></select></div>
             <div class="field"><label for="admin-batch-max">Scores are out of</label><input id="admin-batch-max" type="number" min="1" max="100" step="0.01" value="100" required></div>
@@ -641,8 +640,8 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/student-records.js"></script>
 <script src="js/fee-statements.js?v=5"></script>
-<script src="js/portal.js?v=7"></script>
+<script src="js/portal.js?v=8"></script>
 <script src="js/transcript-import.js"></script>
-<script src="js/batch-scores.js"></script>
+<script src="js/batch-scores.js?v=2"></script>
 </body>
 </html>
