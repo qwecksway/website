@@ -2008,6 +2008,9 @@ if (typeof window.initializeTranscriptImporter === "function") {
     });
 
     var queryView = new URLSearchParams(window.location.search).get("view");
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+    nav.scrollTop = 0;
     var initialViewId = queryView ? "view-" + queryView : window.location.hash.slice(1);
     if (!initialViewId || !selectView(initialViewId, false)) {
       selectView("view-overview", false);
