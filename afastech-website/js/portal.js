@@ -1966,12 +1966,17 @@ if (typeof window.initializeTranscriptImporter === "function") {
       return true;
     }
 
+    // Each menu item loads as its own page load: dashboard.html?view=students
+    function openViewPage(viewId) {
+      var name = viewId.replace(/^view-/, "");
+      window.location.assign(window.location.pathname + (name === "overview" ? "" : "?view=" + encodeURIComponent(name)));
+    }
+
     var homeLink = layout.querySelector("[data-admin-home]");
     if (homeLink) {
       homeLink.addEventListener("click", function (event) {
         event.preventDefault();
-        selectView("view-overview", true);
-        runDashboardRefresh();
+        openViewPage("view-overview");
       });
     }
     views.forEach(function (view) {
@@ -1984,8 +1989,7 @@ if (typeof window.initializeTranscriptImporter === "function") {
         var viewId = link.getAttribute("href").slice(1);
         if (!document.getElementById(viewId)) return;
         event.preventDefault();
-        selectView(viewId, true);
-        runDashboardRefresh();
+        openViewPage(viewId);
       });
     });
     if (toggle && backdrop) {
@@ -2003,7 +2007,8 @@ if (typeof window.initializeTranscriptImporter === "function") {
       }
     });
 
-    var initialViewId = window.location.hash.slice(1);
+    var queryView = new URLSearchParams(window.location.search).get("view");
+    var initialViewId = queryView ? "view-" + queryView : window.location.hash.slice(1);
     if (!initialViewId || !selectView(initialViewId, false)) {
       selectView("view-overview", false);
     }
