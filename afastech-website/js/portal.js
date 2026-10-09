@@ -2010,7 +2010,23 @@ if (typeof window.initializeTranscriptImporter === "function") {
     var queryView = new URLSearchParams(window.location.search).get("view");
     if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
     window.scrollTo(0, 0);
-    nav.scrollTop = 0;
+
+    // Keep the sidebar menu's own scroll position across the page reload.
+    var menuKey = "dashboardMenuScroll:" + window.location.pathname;
+    var menuScrollers = [nav, nav.parentElement, nav.closest("nav, aside")].filter(function (el, i, all) {
+      return el && all.indexOf(el) === i;
+    });
+    try {
+      var savedMenu = JSON.parse(sessionStorage.getItem(menuKey) || "[]");
+      menuScrollers.forEach(function (el, i) { el.scrollTop = savedMenu[i] || 0; });
+    } catch (e) { /* storage unavailable */ }
+    function saveMenuScroll() {
+      try {
+        sessionStorage.setItem(menuKey, JSON.stringify(menuScrollers.map(function (el) { return el.scrollTop; })));
+      } catch (e) { /* storage unavailable */ }
+    }
+    nav.addEventListener("click", saveMenuScroll, true);
+    if (homeLink) homeLink.addEventListener("click", saveMenuScroll, true);
     var initialViewId = queryView ? "view-" + queryView : window.location.hash.slice(1);
     if (!initialViewId || !selectView(initialViewId, false)) {
       selectView("view-overview", false);
