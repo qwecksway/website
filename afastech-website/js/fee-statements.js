@@ -20,7 +20,13 @@
     var paid = Number(s.amount_paid) || 0;
     var payable = Number(s.amount_payable) || 0;
     var now = new Date().toLocaleString("en-GB", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    var logo = new URL("assets/afastech-logo.png", document.baseURI).href;
     return '<div class="fee-statement">' +
+      '<div class="fee-banner"><img class="fee-logo" src="' + esc(logo) + '" alt="AFASTECH logo">' +
+      '<div class="fee-school-lg">AFADJATO SENIOR HIGH<br>TECHNICAL SCHOOL</div>' +
+      '<div class="fee-school-md">AFADJATO SENIOR HIGH TECHNICAL SCHOOL</div>' +
+      '<div class="fee-dept">DEPARTMENT OF FINANCE</div></div>' +
+      '<h3 class="fee-title">STUDENT FEE STATEMENT</h3>' +
       '<table class="fee-meta">' +
       "<tr><th>Student ID / Index Number:</th><td>" + esc(s.index_number || "-") + "</td><th>Date:</th><td>" + esc(now) + "</td></tr>" +
       "<tr><th>Student Name:</th><td colspan=\"3\">" + esc(s.student_name || "-") + "</td></tr>" +
@@ -52,6 +58,10 @@
     ".fee-summary{width:70%;margin-left:auto}.fee-summary th{text-align:right;padding:6px}.fee-summary td{padding:6px;border-bottom:1px solid #000;width:30%}" +
     ".fee-payable th,.fee-payable td{border-top:2px solid #000;font-weight:bold}" +
     ".fee-owing{color:#b00020}.fee-credit{color:#1b6e2d}.fee-note{text-align:center;font-size:10px;margin:20px 0}" +
+    ".fee-banner{position:relative;background:#ffffe0;color:#000;border:1px solid #000;padding:14px 56px;text-align:center}" +
+    ".fee-logo{position:absolute;left:12px;top:50%;transform:translateY(-50%);height:56px;width:auto}" +
+    ".fee-school-lg{font-size:23px;font-weight:bold;line-height:1.2}.fee-school-md{font-size:18px;margin-top:6px}.fee-dept{font-size:16px;margin-top:4px}" +
+    ".fee-title{font-size:18px;text-decoration:underline;text-align:center;margin:14px 0;font-weight:bold}" +
     ".fee-sign{display:flex;gap:40px;margin-top:40px}.fee-sign>div{flex:1}.fee-line{border-bottom:1px solid #000;height:36px;margin-bottom:10px}";
 
   function printStatement(s) {
