@@ -831,12 +831,14 @@
         if (result.error) throw result.error;
         form.reset();
         showAlert(document.getElementById("admin-academic-status"), "Academic information saved.", "success");
+        document.getElementById("admin-academic-status").scrollIntoView({ behavior: "smooth", block: "center" });
       } catch (error) {
         showAlert(
           document.getElementById("admin-academic-status"),
-          "Academic information could not be saved. Check the values and your access, then try again.",
+          "Could not save: " + (error && error.message ? error.message : "check the values and your access, then try again."),
           "error"
         );
+        document.getElementById("admin-academic-status").scrollIntoView({ behavior: "smooth", block: "center" });
         button.disabled = false;
         return;
       }
