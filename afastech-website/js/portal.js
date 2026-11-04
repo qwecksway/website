@@ -963,6 +963,23 @@
     var students = data.students || [];
     var staff = data.staff || [];
 
+    // Wire up the batch transcript importer first and defensively, so an error later
+    // in this function (populating unrelated dropdowns) can never stop its form from working.
+    try {
+      if (typeof window.initializeTranscriptImporter === "function") {
+        window.initializeTranscriptImporter(client, students);
+      }
+    } catch (importerError) {
+      console.error("initializeTranscriptImporter failed", importerError);
+    }
+    try {
+      if (typeof window.initializeBatchResultImporter === "function") {
+        window.initializeBatchResultImporter(client, data);
+      }
+    } catch (resultImporterError) {
+      console.error("initializeBatchResultImporter failed", resultImporterError);
+    }
+
     setSelectOptions(document.getElementById("admin-academic-term-year"), years, "Choose a year", "id", function (item) {
       return item.name + (item.is_current ? " (current)" : "");
     });
@@ -999,12 +1016,6 @@
     setSelectOptions(document.getElementById("admin-academic-student"), students, "Choose a student", "id", function (item) {
       return item.index_number ? item.full_name + " — " + item.index_number : item.full_name || "Student";
     });
-if (typeof window.initializeTranscriptImporter === "function") {
-        window.initializeTranscriptImporter(client, students);
-      }
-      if (typeof window.initializeBatchResultImporter === "function") {
-        window.initializeBatchResultImporter(client, data);
-      }
     setSelectOptions(document.getElementById("admin-academic-allocation-teacher"), staff, "Unassigned", "id", function (item) {
       return item.full_name || "Staff member";
     });

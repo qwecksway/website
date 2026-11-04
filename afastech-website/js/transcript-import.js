@@ -174,6 +174,7 @@
   var OCR_SCALE = 3;
   var OCR_THRESHOLD = 150;
   var ocrWorkerPromise = null;
+  var currentOcrProgress = null;
 
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -195,7 +196,12 @@
           corePath: base,
           langPath: base + "lang",
           workerBlobURL: false,
-          gzip: true
+          gzip: true,
+          logger: function (message) {
+            if (currentOcrProgress && message && message.status === "recognizing text") {
+              currentOcrProgress(message.progress || 0);
+            }
+          }
         });
       })();
       ocrWorkerPromise.catch(function () { ocrWorkerPromise = null; });
@@ -242,7 +248,7 @@
     });
   }
   // Scanned or print-to-PDF pages have no text layer, so the page is read with local OCR.
-  async function ocrPageItems(page) {
+  async function ocrPageItems(page, onProgress) {
     var viewport = page.getViewport({ scale: OCR_SCALE });
     var canvas = document.createElement("canvas");
     canvas.width = Math.ceil(viewport.width);
@@ -266,8 +272,15 @@
       var shade = dark[index] ? 0 : 255;
       data[target] = data[target + 1] = data[target + 2] = shade;
     }
-    context.putImageData(pixels, 0, 0);    var worker = await getOcrWorker();
-    var result = await worker.recognize(canvas);
+    context.putImageData(pixels, 0, 0);
+    var worker = await getOcrWorker();
+    currentOcrProgress = onProgress || null;
+    var result;
+    try {
+      result = await worker.recognize(canvas);
+    } finally {
+      currentOcrProgress = null;
+    }
     var height = canvas.height;
     canvas.width = 0;
     canvas.height = 0;
@@ -352,7 +365,7 @@
     });
     return found;
   }
-  async function parsePdf(file) {
+  async function parsePdf(file, onProgress) {
     if (!window.pdfjsLib) {
       throw new Error("The local PDF reader did not load. Check the connection and reload the Admin portal.");
     }
@@ -372,13 +385,16 @@
       var records = [];
       var current = null;
       for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        if (onProgress) onProgress(pageNumber, pdf.numPages, null);
         var page = await pdf.getPage(pageNumber);
         var viewport = page.getViewport({ scale: 1 });
         var content = await page.getTextContent();
         var pageItems = content.items;
         var usedOcr = false;
         if (pageItems.filter(function (item) { return item.str && item.str.trim(); }).length < 10) {
-          pageItems = await ocrPageItems(page);
+          pageItems = await ocrPageItems(page, onProgress && function (percent) {
+            onProgress(pageNumber, pdf.numPages, percent);
+          });
           usedOcr = true;
         }
         var lines = groupPageLines(pageItems);
@@ -1012,7 +1028,8 @@
       try {
         for (var fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
           var file = files[fileIndex];
-          setStatus("Reading " + file.name + " (" + (fileIndex + 1) + " of " + files.length + ") locally. Nothing is uploaded.", "");
+          var fileLabel = file.name + " (" + (fileIndex + 1) + " of " + files.length + ")";
+          setStatus("Reading " + fileLabel + " locally. Nothing is uploaded.", "");
           if (file.size > 25000000) {
             failures.push(file.name + ": exceeds the 25 MB limit");
             continue;
@@ -1022,7 +1039,11 @@
             continue;
           }
           try {
-            var parsed = await parsePdf(file);
+            var parsed = await parsePdf(file, function (pageNumber, totalPages, ocrPercent) {
+              var pageInfo = totalPages > 1 ? " — page " + pageNumber + " of " + totalPages : "";
+              var ocrInfo = ocrPercent == null ? "" : " (scanning image, " + Math.round(ocrPercent * 100) + "%)";
+              setStatus("Reading " + fileLabel + pageInfo + ocrInfo + " locally. Nothing is uploaded.", "");
+            });
             parsed.forEach(function (record) {
               record.fileName = file.name;
               record.match = autoMatchStudent(record.header);
@@ -1069,4 +1090,27 @@
   }
 
   window.initializeTranscriptImporter = initializeTranscriptImporter;
+
+  // Safety net: if admin data fails to load and initializeTranscriptImporter()
+  // never runs, this still stops the browser from submitting the form natively
+  // (which would reload the whole dashboard and look like nothing happened).
+  function guardAgainstNativeSubmit() {
+    var form = document.getElementById("admin-transcript-file-form");
+    if (!form || form.dataset.guarded) return;
+    form.dataset.guarded = "true";
+    form.addEventListener("submit", function (event) {
+      if (!form.dataset.bound) {
+        event.preventDefault();
+        setStatus(
+          "Batch transcript upload is still starting up. Please wait a moment and try again, or reload the Admin portal.",
+          "error"
+        );
+      }
+    }, true);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", guardAgainstNativeSubmit);
+  } else {
+    guardAgainstNativeSubmit();
+  }
 })();
