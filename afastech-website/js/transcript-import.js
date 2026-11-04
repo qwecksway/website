@@ -89,7 +89,12 @@
       !/course title|final grade|semester|gpa|academic record|official transcript/i.test(line.text);
   }
 
-  function parseTranscriptPage(lines, pageWidth, inheritedYear, inheritedTableState, pageNumber) {
+  function fixOcrGpa(value) {
+    if (/^\d{2}$/.test(value) && Number(value) <= 40) return value.charAt(0) + '.' + value.charAt(1);
+    return value;
+  }
+
+  function parseTranscriptPage(lines, pageWidth, inheritedYear, inheritedTableState, pageNumber, usedOcr) {
     var yearLevel = inheritedYear || 1;
     var entries = [];
     var manualEntries = [];
@@ -111,8 +116,12 @@
       var columns = collectTableCells(line, pageWidth);
       var subject = normalizeCell(columns[0]);
       var sem1Gpa = normalizeCell(columns[1]);
-      var sem1Grade = normalizeCell(columns[2]);
       var sem2Gpa = normalizeCell(columns[3]);
+      if (usedOcr) {
+        sem1Gpa = fixOcrGpa(sem1Gpa);
+        sem2Gpa = fixOcrGpa(sem2Gpa);
+      }
+      var sem1Grade = normalizeCell(columns[2]);
       var sem2Grade = normalizeCell(columns[4]);
       var hasSemesterData = sem1Gpa || sem1Grade || sem2Gpa || sem2Grade;
       var populatedColumns = columns.filter(Boolean).length;
@@ -134,8 +143,10 @@
           final_grade: sem2Grade,
           source_page: pageNumber
         };
-        if (semesterOne.grade_point_average || semesterOne.final_grade) entries.push(semesterOne);
-        if (semesterTwo.grade_point_average || semesterTwo.final_grade) entries.push(semesterTwo);
+        [semesterOne, semesterTwo].forEach(function (entry) {
+          var hasGpa = entry.grade_point_average && Number(entry.grade_point_average) > 0;
+          if (hasGpa || entry.final_grade) entries.push(entry);
+        });
         return;
       }
 
@@ -159,12 +170,196 @@
     };
   }
 
+  var OCR_BASE = "assets/vendor/tesseract-5/";
+  var OCR_SCALE = 3;
+  var OCR_THRESHOLD = 150;
+  var ocrWorkerPromise = null;
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = function () { reject(new Error("The local OCR reader could not be loaded.")); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function getOcrWorker() {
+    if (!ocrWorkerPromise) {
+      ocrWorkerPromise = (async function () {
+        if (!window.Tesseract) await loadScript(OCR_BASE + "tesseract.min.js");
+        var base = new URL(OCR_BASE, document.baseURI).href;
+        return window.Tesseract.createWorker("eng", 1, {
+          workerPath: base + "worker.min.js",
+          corePath: base,
+          langPath: base + "lang",
+          workerBlobURL: false,
+          gzip: true
+        });
+      })();
+      ocrWorkerPromise.catch(function () { ocrWorkerPromise = null; });
+    }
+    return ocrWorkerPromise;
+  }
+
+  async function terminateOcrWorker() {
+    if (!ocrWorkerPromise) return;
+    var pending = ocrWorkerPromise;
+    ocrWorkerPromise = null;
+    try { (await pending).terminate(); } catch (error) { /* worker never started */ }
+  }
+
+  function eraseRules(dark, width, height, minRun) {
+    var toClear = [];
+    var y;
+    var x;
+    var start;
+    for (y = 0; y < height; y += 1) {
+      start = -1;
+      for (x = 0; x <= width; x += 1) {
+        var on = x < width && dark[y * width + x];
+        if (on && start < 0) start = x;
+        if (!on && start >= 0) {
+          if (x - start >= minRun) toClear.push([y * width + start, 1, x - start]);
+          start = -1;
+        }
+      }
+    }
+    for (x = 0; x < width; x += 1) {
+      start = -1;
+      for (y = 0; y <= height; y += 1) {
+        var live = y < height && dark[y * width + x];
+        if (live && start < 0) start = y;
+        if (!live && start >= 0) {
+          if (y - start >= minRun) toClear.push([start * width + x, width, y - start]);
+          start = -1;
+        }
+      }
+    }
+    toClear.forEach(function (run) {
+      for (var step = 0; step < run[2]; step += 1) dark[run[0] + step * run[1]] = 0;
+    });
+  }
+  // Scanned or print-to-PDF pages have no text layer, so the page is read with local OCR.
+  async function ocrPageItems(page) {
+    var viewport = page.getViewport({ scale: OCR_SCALE });
+    var canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    var context = canvas.getContext("2d");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+    // Drop the pale watermark and shading, then erase long table rules that confuse OCR layout analysis.
+    var width = canvas.width;
+    var pixels = context.getImageData(0, 0, width, canvas.height);
+    var data = pixels.data;
+    var dark = new Uint8Array(width * canvas.height);
+    for (var pixel = 0; pixel < dark.length; pixel += 1) {
+      var at = pixel * 4;
+      dark[pixel] = (data[at] * 0.299 + data[at + 1] * 0.587 + data[at + 2] * 0.114) < OCR_THRESHOLD ? 1 : 0;
+    }
+    eraseRules(dark, width, canvas.height, OCR_SCALE * 25);
+    for (var index = 0; index < dark.length; index += 1) {
+      var target = index * 4;
+      var shade = dark[index] ? 0 : 255;
+      data[target] = data[target + 1] = data[target + 2] = shade;
+    }
+    context.putImageData(pixels, 0, 0);    var worker = await getOcrWorker();
+    var result = await worker.recognize(canvas);
+    var height = canvas.height;
+    canvas.width = 0;
+    canvas.height = 0;
+    return (result.data.words || [])
+      .filter(function (word) { return word.text && word.text.trim() && word.confidence > 20; })
+      .map(function (word) {
+        return {
+          str: word.text,
+          transform: [1, 0, 0, 1, word.bbox.x0 / OCR_SCALE, (height - (word.bbox.y0 + word.bbox.y1) / 2) / OCR_SCALE]
+        };
+      });
+  }
+  function parseDateOfBirth(text) {
+    var iso = text.match(/(\d{4})\s*[-\/.]\s*(\d{1,2})\s*[-\/.]\s*(\d{1,2})/);
+    var year;
+    var month;
+    var day;
+    if (iso) {
+      year = Number(iso[1]); month = Number(iso[2]); day = Number(iso[3]);
+    } else {
+      var local = text.match(/(\d{1,2})\s*[-\/.]\s*(\d{1,2})\s*[-\/.]\s*(\d{4})/);
+      if (!local) return "";
+      day = Number(local[1]); month = Number(local[2]); year = Number(local[3]);
+    }
+    var date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return "";
+    return year + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+  }
+
+  // The student block sits in the right-hand side of the first page of each transcript.
+  function parseHeader(items, pageWidth) {
+    var right = items
+      .filter(function (item) {
+        if (typeof item.str !== "string" || !item.str.trim()) return false;
+        var position = item.transform[4] / pageWidth;
+        return position >= 0.55 && position < 0.84;
+      })
+      .map(function (item) {
+        return { x: item.transform[4], y: item.transform[5], text: item.str.trim() };
+      })
+      .sort(function (left, right) { return right.y - left.y || left.x - right.x; });
+    var rows = [];
+    right.forEach(function (item) {
+      var row = rows[rows.length - 1];
+      if (!row || Math.abs(row.y - item.y) > 6) {
+        row = { y: item.y, items: [] };
+        rows.push(row);
+      }
+      row.items.push(item);
+    });
+    var texts = rows.map(function (row) {
+      return row.items.sort(function (a, b) { return a.x - b.x; })
+        .map(function (item) { return item.text; }).join(" ");
+    });
+    var header = { full_name: "", study_area: "", date_of_birth: "", year_of_admission: "", ref_id: "" };
+    var labelled = /study\s*area|birth|admission|ref\s*id/i;
+    texts.forEach(function (text) {
+      var match;
+      if (/study\s*area/i.test(text)) {
+        match = text.match(/area\s*:?\s*(.+)$/i);
+        if (match) header.study_area = match[1].replace(/[^A-Za-z0-9 &'\/-]/g, "").trim();
+      } else if (/birth/i.test(text)) {
+        header.date_of_birth = parseDateOfBirth(text);
+      } else if (/admission/i.test(text)) {
+        match = text.match(/(\d{4})\s*$/);
+        if (match) header.year_of_admission = match[1];
+      } else if (/\bref\b|ref\s*id/i.test(text)) {
+        match = text.match(/id\s*:?\s*([A-Za-z0-9]{5,})/i) || text.match(/([0-9]{6,})/);
+        if (match) header.ref_id = match[1].toUpperCase();
+      } else if (!header.full_name && !labelled.test(text) && /[A-Za-z]{2}/.test(text)) {
+        header.full_name = text.replace(/[^A-Za-z .'-]/g, "").replace(/\s+/g, " ").trim();
+      }
+    });
+    return header;
+  }
+
+  function findSummary(lines) {
+    var found = null;
+    lines.forEach(function (line) {
+      var match = line.text.match(/cumulative\s*gpa\s*:?\s*([\d.]+)\D{0,6}credits\s*earned\s*:?\s*([\d.]+)/i);
+      if (match) found = { cumulative_gpa: match[1].replace(/\.$/, ""), credits_earned: match[2].replace(/\.$/, "") };
+    });
+    return found;
+  }
   async function parsePdf(file) {
     if (!window.pdfjsLib) {
       throw new Error("The local PDF reader did not load. Check the connection and reload the Admin portal.");
     }
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "assets/vendor/pdfjs-4.10.38/pdf.worker.min.mjs";
+    if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "assets/vendor/pdfjs-4.10.38/pdf.worker.min.mjs";
+    }
     var bytes = new Uint8Array(await file.arrayBuffer());
     var loadingTask = window.pdfjsLib.getDocument({ data: bytes.slice() });
     var pdf;
@@ -180,13 +375,22 @@
         var page = await pdf.getPage(pageNumber);
         var viewport = page.getViewport({ scale: 1 });
         var content = await page.getTextContent();
-        var lines = groupPageLines(content.items);
+        var pageItems = content.items;
+        var usedOcr = false;
+        if (pageItems.filter(function (item) { return item.str && item.str.trim(); }).length < 10) {
+          pageItems = await ocrPageItems(page);
+          usedOcr = true;
+        }
+        var lines = groupPageLines(pageItems);
         var isTranscriptStart = lines.some(function (line) {
           return /official transcript/i.test(line.text);
         });
 
         if (isTranscriptStart) {
           current = {
+            header: parseHeader(pageItems, viewport.width),
+            summary: null,
+            ocr: false,
             pages: [],
             entries: [],
             manualEntries: [],
@@ -203,8 +407,12 @@
           viewport.width,
           current.lastYearLevel,
           current.inTable,
-          pageNumber
+          pageNumber,
+          usedOcr
         );
+        if (usedOcr) current.ocr = true;
+        var summary = findSummary(lines);
+        if (summary) current.summary = summary;
         current.entries = current.entries.concat(parsedPage.entries);
         current.manualEntries = current.manualEntries.concat(parsedPage.manualEntries);
         current.lastYearLevel = parsedPage.yearLevel;
@@ -227,6 +435,8 @@
       else await loadingTask.destroy();
     }
   }
+
+  window.AfastechTranscriptParser = { parsePdf: parsePdf };
 
   function createSelect(label, options, selectedValue) {
     var select = document.createElement("select");
@@ -303,36 +513,214 @@
     return row;
   }
 
+  function normalizeRef(value) {
+    return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
+
+  function nameTokens(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+  }
+
+  function nameSimilarity(left, right) {
+    var a = nameTokens(left);
+    var b = nameTokens(right);
+    if (!a.length || !b.length) return 0;
+    var shared = a.filter(function (token) { return b.indexOf(token) >= 0; }).length;
+    return shared / Math.max(a.length, b.length);
+  }
+
+  // Ref ID is the primary key; the printed name only confirms or (as a fallback) suggests a match.
+  function autoMatchStudent(header) {
+    var ref = normalizeRef(header.ref_id);
+    if (ref) {
+      var byRef = students.filter(function (student) { return normalizeRef(student.index_number) === ref; });
+      if (byRef.length === 1) {
+        var similarity = nameSimilarity(header.full_name, byRef[0].full_name);
+        return similarity >= 0.5
+          ? { studentId: byRef[0].id, kind: "ok", note: "Matched by Ref ID and name." }
+          : { studentId: byRef[0].id, kind: "warn", note: "Ref ID matches " + byRef[0].full_name + " but the printed name differs. Confirm before applying." };
+      }
+    }
+    var byName = students.filter(function (student) { return nameSimilarity(header.full_name, student.full_name) === 1; });
+    if (byName.length === 1) {
+      return { studentId: byName[0].id, kind: "warn", note: "Matched by name only (Ref ID " + (ref ? "not found" : "not read") + "). Confirm before applying." };
+    }
+    return { studentId: "", kind: "error", note: "No student matched. Choose the student manually or skip." };
+  }
+
+  function recordLabel(record) {
+    return (record.header.full_name || "Unnamed student") +
+      (record.header.ref_id ? " · " + record.header.ref_id : "");
+  }
+
+  function readRecordEntries(record) {
+    var rows = Array.prototype.slice.call(record.tableBody.querySelectorAll("tr"));
+    var entries = [];
+    rows.forEach(function (row) {
+      var controls = row.querySelectorAll("select, input");
+      var entry = {
+        year_level: controls[0].value,
+        semester_no: controls[1].value,
+        subject_name: controls[2].value.trim(),
+        grade_point_average: controls[3].value.trim(),
+        final_grade: controls[4].value.trim()
+      };
+      if (!entry.subject_name || (!entry.grade_point_average && !entry.final_grade)) {
+        throw new Error("Complete or remove every blank transcript row before applying.");
+      }
+      if (entry.grade_point_average && !/^\d{1,6}(?:\.\d{1,3})?$/.test(entry.grade_point_average)) {
+        throw new Error("Enter each GPA as a number with up to three decimal places.");
+      }
+      entries.push(entry);
+    });
+    if (!entries.length) throw new Error("Each transcript needs at least one completed subject row.");
+    return entries;
+  }
+
+  function buildPayload(record, apply) {
+    var header = record.header;
+    return {
+      target_student_id: record.studentSelect.value,
+      target_entries: readRecordEntries(record),
+      target_profile: {
+        date_of_birth: header.date_of_birth,
+        year_of_admission: header.year_of_admission,
+        study_area: header.study_area
+      },
+      target_summary: record.summary || {},
+      apply_changes: apply
+    };
+  }
+
+  var PROFILE_LABELS = { date_of_birth: "date of birth", year_of_admission: "year of admission", study_area: "study area" };
+
+  function describeResult(result) {
+    if (!result) return "";
+    var parts = [];
+    if (result.added) parts.push(result.added + " new");
+    if (result.updated) parts.push(result.updated + " updated");
+    if (result.unchanged) parts.push(result.unchanged + " already on file");
+    if (result.profile_filled && result.profile_filled.length) {
+      parts.push("fills " + result.profile_filled.map(function (key) { return PROFILE_LABELS[key] || key; }).join(", "));
+    }
+    if (result.profile_conflicts && result.profile_conflicts.length) {
+      parts.push("differs from profile: " + result.profile_conflicts.map(function (key) { return PROFILE_LABELS[key] || key; }).join(", ") + " (kept)");
+    }
+    if (result.summary_updated) parts.push("cumulative summary updated");
+    return parts.join(" · ");
+  }
+
+  function setBadge(record, label, tone, detail) {
+    record.badge.textContent = label;
+    record.badge.className = "transcript-badge transcript-badge-" + tone;
+    record.detail.textContent = detail || "";
+  }
+
+  async function previewRecord(record) {
+    var token = (record.previewToken || 0) + 1;
+    record.previewToken = token;
+    record.result = null;
+    if (!record.studentSelect.value || record.studentSelect.value === "skip") {
+      setBadge(record, record.studentSelect.value === "skip" ? "Skipped" : "Needs student", "muted", "");
+      updateApplyState();
+      return;
+    }
+    var payload;
+    try {
+      payload = buildPayload(record, false);
+    } catch (error) {
+      setBadge(record, "Check rows", "warn", error.message);
+      updateApplyState();
+      return;
+    }
+    setBadge(record, "Checking…", "muted", "");
+    var response;
+    try {
+      response = await client.rpc("admin_apply_student_transcript", payload);
+    } catch (error) {
+      response = { error: error };
+    }
+    if (record.previewToken !== token) return;
+    if (response.error) {
+      setBadge(record, "Error", "error", response.error.message);
+    } else {
+      record.result = response.data;
+      var labels = { "new": "New", updated: "Updated", unchanged: "No new information" };
+      setBadge(record, labels[response.data.status] || response.data.status,
+        response.data.status === "unchanged" ? "muted" : "ok", describeResult(response.data));
+    }
+    updateApplyState();
+  }
+
+  function updateApplyState() {
+    var button = document.getElementById("admin-transcript-save-drafts");
+    var confirm = document.getElementById("admin-transcript-confirm");
+    var pending = reviewRecords.some(function (record) {
+      var value = record.studentSelect.value;
+      return !value || (value !== "skip" && !record.result);
+    });
+    var actionable = reviewRecords.some(function (record) {
+      return record.result && record.result.status !== "unchanged";
+    });
+    button.disabled = !reviewRecords.length || pending || !actionable || !(confirm && confirm.checked);
+  }
+
   function buildRecordCard(record, index) {
     var card = document.createElement("article");
     card.className = "transcript-record-review";
     var heading = document.createElement("h3");
-    heading.textContent = "Transcript " + (index + 1) + " · PDF pages " + record.pages.join(", ");
+    heading.textContent = recordLabel(record);
     card.appendChild(heading);
+
+    var meta = document.createElement("p");
+    meta.className = "transcript-review-note";
+    meta.textContent = [
+      record.fileName + " · page(s) " + record.pages.join(", "),
+      record.header.date_of_birth ? "DOB " + record.header.date_of_birth : "",
+      record.header.year_of_admission ? "Admitted " + record.header.year_of_admission : "",
+      record.header.study_area || "",
+      record.summary ? "CGPA " + record.summary.cumulative_gpa + " · " + record.summary.credits_earned + " credits" : ""
+    ].filter(Boolean).join(" · ");
+    card.appendChild(meta);
 
     var matchField = document.createElement("div");
     matchField.className = "field";
     var label = document.createElement("label");
-    label.textContent = "Match this transcript to an existing student account";
+    label.textContent = "Student account";
     var select = createSelect("Student for transcript " + (index + 1), [
-      { value: "", label: "Choose student" }
+      { value: "", label: "Choose student" },
+      { value: "skip", label: "Skip this transcript" }
     ].concat(students.map(function (student) {
       return {
         value: student.id,
         label: (student.full_name || "Student") +
           (student.index_number ? " — " + student.index_number : "")
       };
-    })), "");
+    })), record.match.studentId);
     label.appendChild(select);
     matchField.appendChild(label);
     card.appendChild(matchField);
 
-    var notice = document.createElement("p");
-    notice.className = "transcript-review-note";
-    notice.textContent = record.manualEntries.length
-      ? record.manualEntries.length + " table row(s) on continuation pages need manual entry. Check the PDF preview and complete or remove those placeholders."
-      : "Check every extracted row against the PDF preview before saving.";
-    card.appendChild(notice);
+    var matchNote = document.createElement("p");
+    matchNote.className = "transcript-match-note transcript-match-" + record.match.kind;
+    matchNote.textContent = record.match.note;
+    card.appendChild(matchNote);
+
+    var status = document.createElement("p");
+    status.className = "transcript-record-status";
+    var badge = document.createElement("span");
+    var detail = document.createElement("span");
+    detail.className = "transcript-record-detail";
+    status.append(badge, detail);
+    card.appendChild(status);
+
+    var details = document.createElement("details");
+    details.className = "transcript-saved-review";
+    var summary = document.createElement("summary");
+    summary.textContent = "Review or correct " + record.entries.length + " extracted rows" +
+      (record.ocr ? " (read by OCR — check every grade)" : "");
+    details.open = Boolean(record.ocr || record.manualEntries.length);
+    details.appendChild(summary);
 
     var tableWrap = document.createElement("div");
     tableWrap.className = "student-table-wrap transcript-review-table-wrap";
@@ -349,16 +737,16 @@
     var body = document.createElement("tbody");
     table.append(head, body);
     tableWrap.appendChild(table);
-    card.appendChild(tableWrap);
+    details.appendChild(tableWrap);
 
     record.studentSelect = select;
     record.card = card;
     record.tableBody = body;
+    record.badge = badge;
+    record.detail = detail;
     record.manualCount = record.manualEntries.length;
     record.entries.forEach(function (entry) { makeTranscriptRow(record, entry); });
 
-    var actions = document.createElement("div");
-    actions.className = "transcript-record-actions";
     var addButton = document.createElement("button");
     addButton.type = "button";
     addButton.className = "btn btn-outline";
@@ -373,18 +761,18 @@
         source_page: record.pages[0]
       });
     });
-    actions.appendChild(addButton);
-    card.appendChild(actions);
+    details.appendChild(addButton);
+    card.appendChild(details);
 
-    var reviewed = document.createElement("label");
-    reviewed.className = "transcript-review-confirm";
-    var checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.required = true;
-    checkbox.setAttribute("aria-label", "Confirm transcript " + (index + 1) + " was reviewed");
-    reviewed.append(checkbox, document.createTextNode(" I checked the full local PDF and reviewed or corrected all transcript rows."));
-    card.appendChild(reviewed);
-    record.reviewed = checkbox;
+    var schedule = function () {
+      clearTimeout(record.previewTimer);
+      record.previewTimer = setTimeout(function () { previewRecord(record); }, 400);
+    };
+    select.addEventListener("change", schedule);
+    body.addEventListener("change", schedule);
+    body.addEventListener("click", function (event) {
+      if (event.target.closest && event.target.closest(".transcript-row-remove")) schedule();
+    });
     return card;
   }
 
@@ -392,113 +780,66 @@
     var host = document.getElementById("admin-transcript-records");
     host.replaceChildren();
     reviewRecords = records;
+    var confirm = document.getElementById("admin-transcript-confirm");
+    if (confirm) confirm.checked = false;
     records.forEach(function (record, index) {
       host.appendChild(buildRecordCard(record, index));
     });
     document.getElementById("admin-transcript-review").hidden = false;
-    document.getElementById("admin-transcript-save-drafts").disabled = !records.length;
+    updateApplyState();
+    records.forEach(previewRecord);
   }
 
-  function readRecordEntries(record) {
-    var rows = Array.prototype.slice.call(record.tableBody.querySelectorAll("tr"));
-    var entries = [];
-    rows.forEach(function (row) {
-      var controls = row.querySelectorAll("select, input");
-      var entry = {
-        year_level: controls[0].value,
-        semester_no: controls[1].value,
-        subject_name: controls[2].value.trim(),
-        grade_point_average: controls[3].value.trim(),
-        final_grade: controls[4].value.trim()
-      };
-      if (!entry.subject_name || (!entry.grade_point_average && !entry.final_grade)) {
-        throw new Error("Complete or remove every blank transcript row before saving.");
-      }
-      if (entry.grade_point_average && !/^\d{1,6}(?:\.\d{1,3})?$/.test(entry.grade_point_average)) {
-        throw new Error("Enter each GPA as a number with up to three decimal places.");
-      }
-      entries.push(entry);
-    });
-    if (!entries.length) throw new Error("Each transcript needs at least one completed subject row.");
-    return entries;
-  }
-
-  async function saveDrafts() {
+  async function applyBatch() {
     var button = document.getElementById("admin-transcript-save-drafts");
-    var studentIds = reviewRecords.map(function (record) { return record.studentSelect.value; });
-    if (studentIds.some(function (id) { return !id; })) {
-      setStatus("Match every transcript to an existing student account before saving.", "error");
-      return;
-    }
-    if (new Set(studentIds).size !== studentIds.length) {
-      setStatus("Each transcript in this PDF must be matched to a different student account.", "error");
-      return;
-    }
-    if (reviewRecords.some(function (record) { return !record.reviewed.checked; })) {
-      setStatus("Confirm that you reviewed each complete PDF transcript before saving.", "error");
-      return;
-    }
-
+    var queue = reviewRecords.filter(function (record) {
+      return record.result && record.result.status !== "unchanged" && record.studentSelect.value !== "skip";
+    });
     var payloads;
     try {
-      payloads = reviewRecords.map(function (record) {
-        return { studentId: record.studentSelect.value, entries: readRecordEntries(record) };
-      });
+      payloads = queue.map(function (record) { return buildPayload(record, true); });
     } catch (error) {
       setStatus(error.message, "error");
       return;
     }
-
     button.disabled = true;
-    var saved = 0;
+    var totals = { added: 0, updated: 0, students: 0, filled: 0 };
     for (var index = 0; index < payloads.length; index += 1) {
-      var result;
+      var response;
       try {
-        result = await client.rpc("admin_stage_student_transcript", {
-          target_student_id: payloads[index].studentId,
-          target_entries: payloads[index].entries
-        });
+        response = await client.rpc("admin_apply_student_transcript", payloads[index]);
       } catch (error) {
+        response = { error: error };
+      }
+      if (response.error) {
         setStatus(
-          saved
-            ? saved + " transcript draft(s) were saved; the next save failed. " + error.message
-            : "Transcript draft could not be saved. " + error.message,
+          totals.students + " transcript(s) applied before " + recordLabel(queue[index]) +
+          " failed: " + response.error.message,
           "error"
         );
-        button.disabled = false;
-        try {
-          await loadSavedTranscripts();
-        } catch (refreshError) {
-          setStatus("Some drafts were saved, but the saved-transcript list could not be refreshed. " + refreshError.message, "error");
-        }
+        reviewRecords.forEach(previewRecord);
+        try { await loadSavedTranscripts(); } catch (refreshError) { /* list refresh is best effort here */ }
         return;
       }
-      if (result.error) {
-        setStatus(
-          saved
-            ? saved + " transcript draft(s) were saved; the next one failed. " + result.error.message
-            : "Transcript draft could not be saved. " + result.error.message,
-          "error"
-        );
-        button.disabled = false;
-        try {
-          await loadSavedTranscripts();
-        } catch (refreshError) {
-          setStatus("Some drafts were saved, but the saved-transcript list could not be refreshed. " + refreshError.message, "error");
-        }
-        return;
-      }
-      saved += 1;
+      totals.students += 1;
+      totals.added += response.data.added || 0;
+      totals.updated += response.data.updated || 0;
+      totals.filled += (response.data.profile_filled || []).length;
     }
-    button.disabled = false;
-    setStatus(saved + " reviewed transcript draft(s) saved. They remain private until published.", "success");
+    var skipped = reviewRecords.length - queue.length;
+    setStatus(
+      totals.students + " transcript(s) applied: " + totals.added + " new row(s), " +
+      totals.updated + " updated row(s), " + totals.filled + " profile detail(s) filled. " +
+      skipped + " skipped or already up to date. Students see the update immediately.",
+      "success"
+    );
+    reviewRecords.forEach(previewRecord);
     try {
       await loadSavedTranscripts();
     } catch (error) {
-      setStatus("Transcript drafts were saved, but the saved-transcript list could not be refreshed. " + error.message, "error");
+      setStatus("Applied, but the saved-transcript list could not be refreshed. " + error.message, "error");
     }
   }
-
   function appendTextCell(row, value) {
     var cell = document.createElement("td");
     cell.textContent = value || "—";
@@ -563,8 +904,8 @@
       appendTextCell(row, String(transcript.entry_count));
       appendTextCell(row, transcript.status === "published" ? "Published" : "Private draft");
       var actionCell = document.createElement("td");
+      actionCell.appendChild(buildSavedEntryReview(transcript.entries || []));
       if (transcript.status === "draft") {
-        actionCell.appendChild(buildSavedEntryReview(transcript.entries || []));
         var publish = document.createElement("button");
         publish.type = "button";
         publish.className = "btn btn-primary";
@@ -624,7 +965,7 @@
         });
         actionCell.append(publish, remove);
       } else {
-        actionCell.textContent = "Published";
+        actionCell.appendChild(document.createTextNode("Published"));
       }
       row.appendChild(actionCell);
       body.appendChild(row);
@@ -654,47 +995,69 @@
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       var fileInput = document.getElementById("admin-transcript-file");
-      var file = fileInput.files && fileInput.files[0];
-      if (!file) {
-        setStatus("Choose a PDF transcript first.", "error");
+      var files = Array.prototype.slice.call(fileInput.files || []);
+      if (!files.length) {
+        setStatus("Choose one or more PDF transcripts first.", "error");
         return;
       }
-      if (file.size > 25000000) {
-        setStatus("This PDF exceeds the 25 MB local processing limit. Split it into smaller files and try again.", "error");
-        return;
-      }
-      if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
-        setStatus("Select a PDF file.", "error");
+      if (files.length > 40) {
+        setStatus("Select at most 40 PDF files per batch.", "error");
         return;
       }
       var button = form.querySelector("button[type='submit']");
       button.disabled = true;
       closeLocalPreview();
-      setStatus("Reading the PDF locally in this browser. The file is not being uploaded.", "");
+      var records = [];
+      var failures = [];
       try {
-        var records = await parsePdf(file);
-        if (objectUrl) URL.revokeObjectURL(objectUrl);
-        objectUrl = URL.createObjectURL(file);
-        var frame = document.getElementById("admin-transcript-pdf-preview");
-        frame.src = objectUrl;
-        frame.hidden = false;
+        for (var fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
+          var file = files[fileIndex];
+          setStatus("Reading " + file.name + " (" + (fileIndex + 1) + " of " + files.length + ") locally. Nothing is uploaded.", "");
+          if (file.size > 25000000) {
+            failures.push(file.name + ": exceeds the 25 MB limit");
+            continue;
+          }
+          if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+            failures.push(file.name + ": not a PDF");
+            continue;
+          }
+          try {
+            var parsed = await parsePdf(file);
+            parsed.forEach(function (record) {
+              record.fileName = file.name;
+              record.match = autoMatchStudent(record.header);
+              records.push(record);
+            });
+          } catch (error) {
+            failures.push(file.name + ": " + (error.message || "could not be read"));
+          }
+        }
+        if (!records.length) {
+          setStatus("No transcripts could be read. " + failures.join("; "), "error");
+          return;
+        }
+        if (files.length === 1) {
+          objectUrl = URL.createObjectURL(files[0]);
+          var frame = document.getElementById("admin-transcript-pdf-preview");
+          frame.src = objectUrl;
+          frame.hidden = false;
+        }
         renderReview(records);
-        var extracted = records.reduce(function (count, record) { return count + record.entries.length; }, 0);
-        var manual = records.reduce(function (count, record) { return count + record.manualCount; }, 0);
+        var matched = records.filter(function (record) { return record.match.studentId; }).length;
         setStatus(
-          records.length + " transcript section(s) found; " + extracted +
-          " semester row(s) extracted; " + manual +
-          " row(s) need manual completion. Match and review every record before saving.",
-          "success"
+          records.length + " transcript(s) read from " + (files.length - failures.length) + " file(s); " +
+          matched + " matched to a student automatically." +
+          (failures.length ? " Not read: " + failures.join("; ") + "." : ""),
+          failures.length ? "error" : "success"
         );
-      } catch (error) {
-        setStatus(error.message || "The PDF could not be read. Try another copy or enter its rows manually.", "error");
       } finally {
+        await terminateOcrWorker();
         button.disabled = false;
       }
     });
 
-    document.getElementById("admin-transcript-save-drafts").addEventListener("click", saveDrafts);
+    document.getElementById("admin-transcript-save-drafts").addEventListener("click", applyBatch);
+    document.getElementById("admin-transcript-confirm").addEventListener("change", updateApplyState);
     document.getElementById("admin-transcript-close-review").addEventListener("click", function () {
       document.getElementById("admin-transcript-review").hidden = true;
       document.getElementById("admin-transcript-records").replaceChildren();
@@ -705,4 +1068,5 @@
     });
   }
 
+  window.initializeTranscriptImporter = initializeTranscriptImporter;
 })();

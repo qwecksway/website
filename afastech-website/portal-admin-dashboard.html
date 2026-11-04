@@ -404,30 +404,31 @@
                         </section>
                 <section id="view-transcripts" class="dashboard-view" data-dashboard-view hidden>
           <section class="card" aria-labelledby="admin-transcripts-heading">
-            <h1 id="admin-transcripts-heading">Individual transcript imports</h1>
-            <p>Choose a PDF transcript. It is read in this browser only; the source file is never uploaded or saved. Extracted subject rows must be matched to an existing student, checked, and corrected before a private draft is saved. Letter grades and GPA are preserved as printed and are not converted to marks.</p>
+            <h1 id="admin-transcripts-heading">Batch transcript upload</h1>
+            <p>Choose one or more PDF transcripts. They are read in this browser only (scanned or printed PDFs are read with on-device OCR); the source files are never uploaded or saved. Each transcript is matched to a student by CassRefID and name, then merged into that student's running transcript: new subjects and semesters are added, changed grades are updated, and anything already on file is ignored. Date of birth, year of admission and study area are filled in only when the student's profile has none. Letter grades and GPA are preserved as printed.</p>
             <form id="admin-transcript-file-form">
               <div class="field">
-                <label for="admin-transcript-file">Transcript PDF</label>
-                <input id="admin-transcript-file" type="file" accept="application/pdf,.pdf" required>
+                <label for="admin-transcript-file">Transcript PDFs</label>
+                <input id="admin-transcript-file" type="file" accept="application/pdf,.pdf" multiple required>
               </div>
-              <button class="btn btn-primary" type="submit">Read PDF locally</button>
+              <button class="btn btn-primary" type="submit">Read PDFs locally</button>
             </form>
             <p id="admin-transcript-status" class="alert" role="status" style="margin-top:1rem;"></p>
             <div id="admin-transcript-review" hidden>
               <div class="transcript-review-toolbar">
-                <h2>Review extracted records</h2>
+                <h2>Review matched transcripts</h2>
                 <button id="admin-transcript-close-review" class="btn btn-outline" type="button">Close local preview</button>
               </div>
-              <p>Assign each transcript to the correct student account. Check every page against the local PDF preview, especially any rows flagged as needing manual entry.</p>
+              <p>Confirm each student match. The badge shows what would change: New, Updated, or No new information (ignored). Check rows read by OCR against the PDF.</p>
               <iframe id="admin-transcript-pdf-preview" title="Local transcript PDF preview" hidden></iframe>
               <div id="admin-transcript-records"></div>
-              <button id="admin-transcript-save-drafts" class="btn btn-primary" type="button">Save reviewed drafts</button>
+              <label class="transcript-review-confirm"><input id="admin-transcript-confirm" type="checkbox"> I reviewed the student matches and extracted data.</label>
+              <button id="admin-transcript-save-drafts" class="btn btn-primary" type="button" disabled>Apply to student transcripts</button>
             </div>
           </section>
           <section class="card" aria-labelledby="admin-transcript-queue-heading" style="margin-top:1.5rem;">
-            <h2 id="admin-transcript-queue-heading">Saved transcripts</h2>
-            <p>Drafts remain private. Publishing makes that transcript available only to the selected student's portal.</p>
+            <h2 id="admin-transcript-queue-heading">Student transcripts</h2>
+            <p>Transcripts applied here are published straight to the matching student's portal. Older private drafts can still be published or deleted.</p>
             <div style="overflow-x:auto;">
               <table class="data-table">
                 <thead><tr><th>Student</th><th>CassRefID</th><th>Rows</th><th>Status</th><th>Action</th></tr></thead>

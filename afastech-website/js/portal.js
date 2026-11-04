@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   
   "use strict";
 
@@ -113,6 +113,111 @@
     }
   }
 
+  function transcriptText(tag, text, className) {
+    var element = document.createElement(tag);
+    element.textContent = text;
+    if (className) element.className = className;
+    return element;
+  }
+
+  function transcriptGpa(value) {
+    if (value == null || value === "") return "-";
+    var number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(1) : String(value);
+  }
+
+  // Renders the continuous transcript in the same layout as the printed official transcript.
+  async function renderStudentTranscript(client, host, entries, record) {
+    host.replaceChildren();
+    if (!entries.length) return;
+
+    var profile = {};
+    try {
+      var response = await client.rpc("student_get_my_transcript_profile");
+      if (!response.error && response.data) profile = response.data;
+    } catch (error) {
+      profile = {};
+    }
+
+    // Entries arrive newest transcript first, so the first row seen for a subject is the current one.
+    var seen = {};
+    var years = {};
+    entries.forEach(function (entry) {
+      var key = [entry.year_level, entry.semester_no, String(entry.subject_name).trim().toLowerCase()].join("|");
+      if (seen[key]) return;
+      seen[key] = true;
+      var year = years[entry.year_level] || (years[entry.year_level] = {});
+      var subject = year[entry.subject_name.trim().toLowerCase()] ||
+        (year[entry.subject_name.trim().toLowerCase()] = { name: entry.subject_name.trim() });
+      subject["s" + entry.semester_no] = entry;
+    });
+
+    var doc = document.createElement("article");
+    doc.className = "transcript-doc";
+    doc.appendChild(transcriptText("h3", "OFFICIAL TRANSCRIPT", "transcript-doc-title"));
+
+    var info = document.createElement("dl");
+    info.className = "transcript-doc-info";
+    [
+      ["Name", profile.full_name],
+      ["Study Area", profile.study_area || (record && record.programme)],
+      ["Date of Birth", profile.date_of_birth],
+      ["Year of Admission", profile.year_of_admission],
+      ["Ref ID", profile.index_number || (record && record.index_number)]
+    ].forEach(function (pair) {
+      if (!pair[1]) return;
+      var row = document.createElement("div");
+      row.append(transcriptText("dt", pair[0]), transcriptText("dd", String(pair[1])));
+      info.appendChild(row);
+    });
+    doc.appendChild(info);
+
+    Object.keys(years).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (yearLevel) {
+      var section = document.createElement("section");
+      section.className = "transcript-doc-year";
+      section.appendChild(transcriptText("h4", "Year " + yearLevel + " Academic Record"));
+      var wrap = document.createElement("div");
+      wrap.className = "student-table-wrap";
+      var table = document.createElement("table");
+      table.className = "student-data-table transcript-doc-table";
+      var head = document.createElement("thead");
+      var top = document.createElement("tr");
+      var courseHead = transcriptText("th", "Course Title");
+      courseHead.rowSpan = 2;
+      var sem1 = transcriptText("th", "Semester 1");
+      sem1.colSpan = 2;
+      var sem2 = transcriptText("th", "Semester 2");
+      sem2.colSpan = 2;
+      top.append(courseHead, sem1, sem2);
+      var sub = document.createElement("tr");
+      ["GPA", "Final Grade", "GPA", "Final Grade"].forEach(function (label) { sub.appendChild(transcriptText("th", label)); });
+      head.append(top, sub);
+      var body = document.createElement("tbody");
+      Object.keys(years[yearLevel]).sort().forEach(function (key) {
+        var subject = years[yearLevel][key];
+        var row = document.createElement("tr");
+        row.appendChild(transcriptText("td", subject.name));
+        [subject.s1, subject.s2].forEach(function (entry) {
+          row.appendChild(transcriptText("td", entry ? transcriptGpa(entry.grade_point_average) : "-"));
+          row.appendChild(transcriptText("td", entry && entry.final_grade ? entry.final_grade : "-"));
+        });
+        body.appendChild(row);
+      });
+      table.append(head, body);
+      wrap.appendChild(table);
+      section.appendChild(wrap);
+      doc.appendChild(section);
+    });
+
+    if (profile.cumulative_gpa != null || profile.credits_earned != null) {
+      var summary = document.createElement("p");
+      summary.className = "transcript-doc-summary";
+      summary.textContent = "Cumulative GPA: " + transcriptGpa(profile.cumulative_gpa) +
+        " | Credits Earned: " + (profile.credits_earned == null ? "-" : Number(profile.credits_earned).toFixed(1));
+      doc.appendChild(summary);
+    }
+    host.appendChild(doc);
+  }
   async function loadStudentDashboard(client, userId) {
     var results = await Promise.all([
       client.from("student_details").select("index_number, programme, residency, form_class, current_term, fees_status").eq("profile_id", userId).maybeSingle(),
@@ -187,13 +292,7 @@
       function (row) { return [row.class_name, row.programme_name].filter(Boolean).join(" · "); },
       function (row) { return row.academic_year_name; }
     ]);
-    renderRows(document.getElementById("student-transcripts"), results[5].data || [], [
-      function (row) { return "Year " + row.year_level; },
-      function (row) { return "Semester " + row.semester_no; },
-      function (row) { return row.subject_name; },
-      function (row) { return row.grade_point_average == null ? "—" : String(row.grade_point_average); },
-      function (row) { return row.final_grade || "—"; }
-    ]);
+    await renderStudentTranscript(client, document.getElementById("student-transcripts"), results[5].data || [], record);
     renderAnnouncements(results[3].data || []);
     if (!record) showEmptyState(document.getElementById("student-data-status"), "Your school record has not been added yet.");
     if (!results[1].data.length) showEmptyState(document.getElementById("student-timetable-status"), "No timetable entries are available.");
@@ -367,7 +466,7 @@
 
   function renderStaffAcademicAssessments(select, assessments) {
     setSelectOptions(select, assessments, "Choose an assessment", "id", function (item) {
-      return item.class_name + " — " + item.subject_name + " · " + item.title + " (" + item.status + ")";
+      return item.class_name + " — " + item.subject_name + " — " + item.title + " (" + item.status + ")";
     });
   }
 

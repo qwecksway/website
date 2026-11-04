@@ -5149,3 +5149,25 @@ body[data-page="admin-dashboard"] .admin-empty p {
 @media (max-width:700px){.sr-search-main{grid-column:auto}.sr-search-actions{justify-content:stretch}}
 
 .sr-form[hidden],#sr-bulk-panel[hidden],#admin-student-single-form[hidden]{display:none !important}
+
+/* Continuous transcript: student document view and admin batch review */
+.transcript-doc { background: #fff; border: 1px solid #d8d8d8; border-radius: 6px; padding: 1.25rem; }
+.transcript-doc-title { text-align: center; letter-spacing: .08em; color: var(--forest-900); margin: 0 0 1rem; }
+.transcript-doc-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .35rem 1.5rem; margin: 0 0 1rem; }
+.transcript-doc-info div { display: flex; gap: .5rem; }
+.transcript-doc-info dt { font-weight: 600; }
+.transcript-doc-info dd { margin: 0; }
+.transcript-doc-year h4 { text-align: center; background: #e9e9e9; margin: 1rem 0 0; padding: .4rem; }
+.transcript-doc-table th, .transcript-doc-table td { text-align: center; border: 1px solid #333; }
+.transcript-doc-table td:first-child { text-align: left; }
+.transcript-doc-summary { font-weight: 600; margin: 1rem 0 0; }
+.transcript-badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .8rem; font-weight: 600; background: #eee; color: #333; }
+.transcript-badge-ok { background: #dff3e4; color: #135c2b; }
+.transcript-badge-warn { background: #fdf0d2; color: #7a5200; }
+.transcript-badge-error { background: #fbdcdc; color: #8a1c1c; }
+.transcript-record-status { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.transcript-record-detail { font-size: .9rem; }
+.transcript-match-note { margin: .25rem 0; font-size: .9rem; }
+.transcript-match-ok { color: #135c2b; }
+.transcript-match-warn { color: #7a5200; }
+.transcript-match-error { color: #8a1c1c; }
