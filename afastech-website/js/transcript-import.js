@@ -582,7 +582,7 @@
         final_grade: controls[4].value.trim()
       };
       if (!entry.subject_name || (!entry.grade_point_average && !entry.final_grade)) {
-        throw new Error("Complete or remove every blank transcript row before applying.");
+        return; // Blank row: dropped automatically instead of blocking the whole transcript.
       }
       if (entry.grade_point_average && !/^\d{1,6}(?:\.\d{1,3})?$/.test(entry.grade_point_average)) {
         throw new Error("Enter each GPA as a number with up to three decimal places.");

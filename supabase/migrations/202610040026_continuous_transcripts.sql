@@ -129,13 +129,17 @@ begin
     gpa_text := trim(coalesce(transcript_entry ->> 'grade_point_average', ''));
     grade_text := trim(coalesce(transcript_entry ->> 'final_grade', ''));
 
+    -- Blank rows (no subject, or a subject with neither a GPA nor a final grade) are
+    -- dropped automatically instead of blocking the whole transcript.
+    if subject_text = '' or (gpa_text = '' and grade_text = '') then
+      continue;
+    end if;
+
     if year_level_text not in ('1', '2', '3')
       or semester_no_text not in ('1', '2')
-      or subject_text = ''
       or char_length(subject_text) > 120
       or (gpa_text <> '' and gpa_text !~ '^[0-9]{1,6}([.][0-9]{1,3})?$')
       or (grade_text <> '' and char_length(grade_text) > 24)
-      or (gpa_text = '' and grade_text = '')
     then
       raise exception using errcode = '22023', message = 'A transcript row contains invalid year, semester, subject, GPA, or final grade data.';
     end if;
@@ -199,20 +203,20 @@ begin
   if found then
     if dob_value is not null then
       if details.date_of_birth is null then
-        profile_filled := profile_filled || 'date_of_birth';
+        profile_filled := array_append(profile_filled, 'date_of_birth');
       elsif details.date_of_birth <> dob_value then
-        profile_conflicts := profile_conflicts || 'date_of_birth';
+        profile_conflicts := array_append(profile_conflicts, 'date_of_birth');
       end if;
     end if;
     if admission_value is not null then
       if details.year_of_admission is null then
-        profile_filled := profile_filled || 'year_of_admission';
+        profile_filled := array_append(profile_filled, 'year_of_admission');
       elsif details.year_of_admission <> admission_value then
-        profile_conflicts := profile_conflicts || 'year_of_admission';
+        profile_conflicts := array_append(profile_conflicts, 'year_of_admission');
       end if;
     end if;
     if study_area_text <> '' and nullif(trim(coalesce(details.programme, '')), '') is null then
-      profile_filled := profile_filled || 'study_area';
+      profile_filled := array_append(profile_filled, 'study_area');
     end if;
 
     if apply_changes and array_length(profile_filled, 1) is not null then
