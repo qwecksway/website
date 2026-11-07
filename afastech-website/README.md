@@ -19,6 +19,7 @@ afastech-website/
 ├── first-year-registration.html   Public first-year subject registration (2026/2027)
 ├── portal-staff.html              Staff sign-in (Supabase Auth)
 ├── portal-admin.html              Super Admin sign-in (Supabase Auth)
+├── downloads/                     Windows Super Admin installer
 ├── portal-student-dashboard.html  Student dashboard (RLS-protected data)
 ├── portal-staff-dashboard.html    Staff dashboard (RLS-protected data)
 ├── portal-admin-dashboard.html    Super Admin account, house, and fee tools
@@ -117,6 +118,12 @@ Apply the root migration `202610040028_first_year_registration.sql` to the linke
 Signed-in Super Admins can open **First year registrations**, refresh the list, and download an `.xlsx` workbook containing an all-registrations sheet and one sheet per learning area. Registration starts open; use **Close registration** to block new submissions at the database after the registration period, and **Open registration** to reopen it. Closing does not delete submissions. The export retains the supplied field names and coded disability, Braille and relationship values, with dates of birth as `YYYYMMDD` and phone numbers as text. It loads all pages rather than only the first API page. The Excel library is loaded from jsDelivr when downloading.
 
 The form collects personal data, including national ID and disability information. Public users can submit but cannot read or modify submissions; the listing function checks the database admin role. Use HTTPS, limit Super Admin access, and securely handle and delete downloaded spreadsheets according to school policy. Public submissions are not protected by CAPTCHA or application-level rate limits: configure suitable abuse protection at the API boundary before opening the form to the public. Supabase Auth CAPTCHA alone does not protect this anonymous database function. Verify access controls and the migration on a test project before collecting real registrations.
+
+## Super Admin Windows app
+
+The private Super Admin sign-in page offers the Windows installer. It installs for the current Windows user, creates desktop and Start menu icons, and provides an entry in Windows Installed apps for removal. The app is a native WebView2 shell for the live portal; it needs 64-bit Windows 10/11, .NET Framework 4.6.2 or newer, an internet connection and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Portal sign-in, permissions, session persistence, exports and server-side updates work as in the browser; the app has its own saved session. Sign out from the app on shared computers; uninstalling does not remove its local browser session data.
+
+The installer is not code-signed, so Windows SmartScreen or browser security warnings may appear. A trusted code-signing certificate and release signing process should be used before broader distribution. The installer does not contain passwords; the app prompts for the existing Super Admin account as needed. Its source and repeatable Windows build script are in the repository-root `desktop-admin/` directory. Run `powershell -ExecutionPolicy Bypass -File desktop-admin\build.ps1` to download the pinned WebView2 SDK, check its hash, and rebuild the installer under `downloads/`.
 
 ## Before publishing
 
