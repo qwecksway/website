@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Year Registration 2026/2027 — AFASTECH</title>
+<link rel="icon" href="assets/afastech-crest.jpg" type="image/jpeg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <div class="container nav-row">
+    <a class="brand" href="index.html">
+      <img class="brand-crest" src="assets/afastech-crest.jpg" alt="AFASTECH school crest">
+      <span class="brand-text"><span class="brand-name">AFASTECH</span><span class="brand-sub">Afadjato Senior High Technical School</span></span>
+    </a>
+    <a class="btn btn-outline" href="portal-student.html">Student Portal</a>
+  </div>
+</header>
+<main id="main" class="container registration-page">
+  <div class="card">
+    <p class="login-kicker">2026/2027 academic year</p>
+    <h1>First Year Subject Registration</h1>
+    <p>Choose your learning area and subjects, enter your details, and review them before submitting. This form does not create a student portal account.</p>
+    <p>Core subjects: English Language, General Science, Mathematics, Social Studies, ICT and PEH.</p>
+    <p>Your registration, including disability and guardian information, is shared with the school administrator for assessment registration.</p>
+    <div id="registration-status" class="alert" role="status" aria-live="polite"></div>
+    <form id="first-year-form">
+      <section id="registration-subjects">
+        <h2>1. Choose subjects</h2>
+        <div class="field"><label for="learning-area">Learning area *</label>
+          <select id="learning-area" name="learning_area" required><option value="">Select a learning area</option></select>
+        </div>
+        <div class="field"><label for="subject-option">Subject combination *</label>
+          <select id="subject-option" name="option_number" required disabled><option value="">Select a learning area first</option></select>
+        </div>
+        <button class="btn btn-primary" type="button" id="subjects-next">Continue</button>
+      </section>
+      <section id="registration-details" hidden>
+        <h2>2. Your details</h2>
+        <p>Write names as they appear on your documents. Fields marked * are required.</p>
+        <div class="registration-grid">
+          <div class="field"><label for="surname">Surname *</label><input id="surname" name="surname" required minlength="3" maxlength="160" autocomplete="family-name"></div>
+          <div class="field"><label for="firstname">First name *</label><input id="firstname" name="firstname" required minlength="3" maxlength="160" autocomplete="given-name"></div>
+          <div class="field"><label for="othernames">Other names</label><input id="othernames" name="othernames" maxlength="160"></div>
+          <div class="field"><label for="dob">Date of birth *</label><input id="dob" name="dob" type="date" min="1900-01-01" required></div>
+          <div class="field"><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="">Select</option><option value="M">Male</option><option value="F">Female</option></select></div>
+          <div class="field"><label for="nationalid">National ID (e.g. GHA1234567891)</label><input id="nationalid" name="nationalid" minlength="13" maxlength="13"></div>
+          <div class="field"><label for="disability">Disability status *</label><select id="disability" name="disability" required><option value="">Select</option><option value="1">None (normal)</option><option value="2">Visually impaired</option><option value="3">Hearing/speech impaired</option><option value="4">Physically impaired</option><option value="5">Mentally impaired</option><option value="6">Spastic/palsy/epileptic</option><option value="7">Low vision</option></select></div>
+          <div class="field"><label for="braille">Can read Braille? *</label><select id="braille" name="braille" required><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="field"><label for="guardian">Parent / guardian name *</label><input id="guardian" name="guardian" required minlength="3" maxlength="160"></div>
+          <div class="field"><label for="relationship">Guardian's relationship to student *</label><select id="relationship" name="relationship" required><option value="">Select</option><option value="1">Father</option><option value="2">Mother</option><option value="3">Brother</option><option value="4">Sister</option><option value="5">Uncle</option><option value="6">Aunty</option><option value="7">Grandfather</option><option value="8">Grandmother</option><option value="9">Acquaintance</option><option value="10">Other</option></select></div>
+          <div class="field"><label for="phone">Guardian phone number *</label><input id="phone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="Enter exactly 10 digits" required></div>
+          <div class="field"><label for="profession">Guardian's profession *</label><input id="profession" name="profession" maxlength="160" required></div>
+          <div class="field"><label for="address">Home address *</label><input id="address" name="address" maxlength="160" required></div>
+          <div class="field"><label for="year">Year of entry *</label><input id="year" name="year" value="2026" readonly required></div>
+        </div>
+        <div class="registration-actions"><button class="btn btn-outline" type="button" data-back="subjects">Back</button><button class="btn btn-primary" type="button" id="details-next">Review</button></div>
+      </section>
+      <section id="registration-review" hidden>
+        <h2>3. Check and submit</h2>
+        <p>Please check all your details carefully.</p>
+        <dl id="registration-summary" class="registration-summary"></dl>
+        <div class="registration-actions"><button class="btn btn-outline" type="button" data-back="details">Edit details</button><button class="btn btn-primary" type="submit" id="registration-submit">Submit registration</button></div>
+      </section>
+    </form>
+    <section id="registration-complete" hidden>
+      <h2>Registration saved</h2>
+      <p>Your subject registration has been saved for the school administrator. It does not create a portal sign-in account.</p>
+      <p>Reference: <strong id="registration-reference"></strong></p>
+      <a class="btn btn-outline" href="first-year-registration.html">Register another student</a>
+    </section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/first-year-registration.js"></script>
+</body>
+</html>

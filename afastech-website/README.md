@@ -16,6 +16,7 @@ afastech-website/
 ├── events.html                    Upcoming events
 ├── contact.html                   Contact form, staff contacts, map
 ├── portal-student.html            Student sign-in (Supabase Auth)
+├── first-year-registration.html   Public first-year subject registration (2026/2027)
 ├── portal-staff.html              Staff sign-in (Supabase Auth)
 ├── portal-admin.html              Super Admin sign-in (Supabase Auth)
 ├── portal-student-dashboard.html  Student dashboard (RLS-protected data)
@@ -24,6 +25,8 @@ afastech-website/
 ├── css/style.css                  Shared design system
 ├── js/main.js                     Nav toggle, current-page highlighting, footer year
 ├── js/admissions.js               Admissions wizard logic
+├── js/first-year-registration.js  First-year registration form
+├── js/first-year-admin.js         Super Admin registration list and Excel export
 ├── js/portal.js                   Supabase Auth and portal data access
 ├── js/supabase-config.js          Public Supabase URL and publishable key
 └── assets/
@@ -106,6 +109,14 @@ The static site calls Supabase Auth and Data APIs directly; staff account creati
 Announcements remain read-only. Review academic access with separate student, staff, and Super Admin accounts, including tests for role boundaries, unassigned classes, incomplete marks, and unpublished results, before using real school data.
 
 Public navigation exposes only the Student and Staff portals. The Super Admin login is a separate, privately shared URL and is marked `noindex`; this reduces public discoverability but is not an access-control measure. Authentication and database role checks protect the admin tools.
+
+## First-year subject registrations
+
+Apply the root migration `202610040028_first_year_registration.sql` to the linked Supabase project and deploy the updated website. The public form is linked from Admissions and the Student Portal and uses the supplied 2026/2027 learning areas and subject combinations. It records submissions centrally; it does not create portal accounts or enrol students. Year of entry is fixed at 2026. A successful submission displays a reference; an uncertain submission can be retried with the same details without creating a second record. Separate submissions are not automatically deduplicated.
+
+Signed-in Super Admins can open **First year registrations**, refresh the list, and download an `.xlsx` workbook containing an all-registrations sheet and one sheet per learning area. Registration starts open; use **Close registration** to block new submissions at the database after the registration period, and **Open registration** to reopen it. Closing does not delete submissions. The export retains the supplied field names and coded disability, Braille and relationship values, with dates of birth as `YYYYMMDD` and phone numbers as text. It loads all pages rather than only the first API page. The Excel library is loaded from jsDelivr when downloading.
+
+The form collects personal data, including national ID and disability information. Public users can submit but cannot read or modify submissions; the listing function checks the database admin role. Use HTTPS, limit Super Admin access, and securely handle and delete downloaded spreadsheets according to school policy. Public submissions are not protected by CAPTCHA or application-level rate limits: configure suitable abuse protection at the API boundary before opening the form to the public. Supabase Auth CAPTCHA alone does not protect this anonymous database function. Verify access controls and the migration on a test project before collecting real registrations.
 
 ## Before publishing
 

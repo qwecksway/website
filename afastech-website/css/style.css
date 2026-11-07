@@ -589,6 +589,12 @@ section { padding: 4.5rem 0; }
   border-color: var(--forest-500);
 }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.registration-page { max-width: 960px; padding-top: 2rem; padding-bottom: 4rem; }
+.registration-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 1rem; }
+.registration-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+.registration-summary { display: grid; grid-template-columns: minmax(120px, 1fr) 2fr; gap: .5rem 1rem; overflow-wrap: anywhere; }
+.registration-summary dt { font-weight: 600; }
+.registration-summary dd { margin: 0; }
 @media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
 .field-error { color: var(--error); font-size: 0.8rem; margin-top: 0.3rem; display: none; }
 .field.has-error input,

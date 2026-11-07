@@ -2405,6 +2405,7 @@
         initializePasswordChange(client, "staff-password-form", "staff-password-status");
       }
       else {
+        window.initializeFirstYearRegistrations(client);
         refreshDashboardData = function () { return loadAdminDashboard(client); };
         await loadAdminDashboard(client);
         initializeStaffInvite(client);
